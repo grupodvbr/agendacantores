@@ -129,6 +129,7 @@
   <button id="addBtn">+</button>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
   <script>
     // Estrelas
     function criarEstrelas(container, qtd){
@@ -250,7 +251,7 @@
       fecharForm();carregarAgenda();
     }
 
-    let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}});
+    let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"d/m/Y",locale:"pt",onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}});
     verificarLogin();
   </script>
 </body>
