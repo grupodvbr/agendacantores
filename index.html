@@ -82,8 +82,8 @@
       box-shadow:0 6px 18px rgba(0,0,0,.4);
     }
 
-    /* Modal detalhes */
-    #modal,#formModal{
+    /* Modal detalhes e form */
+    #modal,#formModal,#loginModal{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:rgba(0,0,0,.6); z-index:1000;
     }
@@ -98,15 +98,13 @@
     .kv b{ color:var(--amarelo); }
     .close{ margin-top:12px; width:100%; }
 
-    /* Form modal */
     #formModal .modal-box{ background:#fff; color:#000; }
     #formModal label{ display:block; margin-top:8px; font-size:14px; }
     #formModal input{ width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; margin-top:4px; font-size:16px; }
     #formModal input:focus{ outline:2px solid var(--amarelo); }
     #formModal .btn{ margin-top:12px; width:100%; }
 
-    /* Login */
-    #loginModal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:1500; }
+    #loginModal{ background:rgba(0,0,0,.8); z-index:1500; }
     #loginBox{ width:320px; background:#fff; color:#000; padding:20px; border-radius:12px; }
 
     /* Mobile */
@@ -147,13 +145,14 @@
     <div class="modal-box">
       <h3>Novo Registro</h3>
       <label>Data</label>
-      <input type="date" id="f_data">
+      <input type="date" id="f_data" />
       <label>Cantor</label>
-      <input type="text" id="f_cantor">
+      <input type="text" id="f_cantor" />
       <label>Horário</label>
-      <input type="time" id="f_hora">
+      <input type="time" id="f_hora" />
       <label>Valor</label>
-      <input type="text" id="f_valor" inputmode="decimal" placeholder="0,00">
+      <!-- teclado numérico e vírgula/ponto -->
+      <input type="text" id="f_valor" inputmode="decimal" placeholder="0,00" />
       <button class="btn" onclick="salvarRegistro()">Salvar</button>
       <button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button>
     </div>
@@ -168,76 +167,179 @@
       <h3>Login da Empresa</h3>
       <input type="password" id="senha" placeholder="Digite a senha" />
       <button class="btn" onclick="login()">Entrar</button>
-      <div id="loginMsg"></div>
+      <div id="loginMsg" style="color:#ff4d4f;margin-top:6px;"></div>
     </div>
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
-    const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec"; 
+    const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec";
     const SENHAS = { "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
     let EMPRESA = null;
 
-    // Login
+    // ---------- LOGIN ----------
     function verificarLogin(){
       const e = localStorage.getItem("empresa");
-      if(e){ EMPRESA=e; document.getElementById('empresaNome').textContent=EMPRESA; document.getElementById('loginModal').style.display="none"; carregarAgenda(); }
+      if(e){
+        EMPRESA = e;
+        document.getElementById('empresaNome').textContent = EMPRESA;
+        document.getElementById('loginModal').style.display = "none";
+        carregarAgenda();
+      }
     }
     function login(){
       const s = document.getElementById('senha').value.trim();
-      if(SENHAS[s]){ EMPRESA=SENHAS[s]; localStorage.setItem("empresa",EMPRESA); document.getElementById('empresaNome').textContent=EMPRESA; document.getElementById('loginModal').style.display="none"; carregarAgenda();}
-      else{ document.getElementById('loginMsg').textContent="Senha incorreta."; }
-    }
-
-    // Helpers
-    const pad=n=>n.toString().padStart(2,'0');
-    const formatHora=raw=>{ if(!raw) return ""; let [h,m]=String(raw).split(':'); return pad(h)+":"+pad(m||"00"); };
-    const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-    // Render
-    async function carregarAgenda(inicio=null,fim=null){
-      const box=document.getElementById('lista'); box.innerHTML="Carregando...";
-      const res=await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
-      let eventos=await res.json();
-
-      if(inicio&&fim){ const de=new Date(inicio),ate=new Date(fim); eventos=eventos.filter(ev=>{const d=new Date(ev.data); return d>=de&&d<=ate;}); }
-
-      eventos.sort((a,b)=> new Date(a.data)-new Date(b.data));
-      const grupos={}; eventos.forEach(ev=>{ const k=ev.data; (grupos[k] ||= []).push(ev); });
-      box.innerHTML="";
-      for(const k of Object.keys(grupos)){
-        const d=new Date(k); const dia=pad(d.getDate()); const mes=d.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
-        const itens=grupos[k].map(ev=>`
-          <div class="linha" onclick="abrirModal('${ev.data}','${ev.cantor}','${ev.hora}','${ev.valor}')">
-            <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
-          </div>`).join("");
-        box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
+      if(SENHAS[s]){
+        EMPRESA = SENHAS[s];
+        localStorage.setItem("empresa", EMPRESA);
+        document.getElementById('empresaNome').textContent = EMPRESA;
+        document.getElementById('loginModal').style.display = "none";
+        carregarAgenda();
+      }else{
+        document.getElementById('loginMsg').textContent = "Senha incorreta.";
       }
     }
 
-    // Modal detalhes
-    function abrirModal(data,cantor,hora,valor){ 
-      document.getElementById('m_data').textContent=data; 
-      document.getElementById('m_cantor').textContent=cantor; 
-      document.getElementById('m_hora').textContent=formatHora(hora); 
-      document.getElementById('m_valor').textContent=formatValor(valor); 
-      document.getElementById('modal').style.display="flex";
-    }
-    function fecharModal(){ document.getElementById('modal').style.display="none"; }
+    // ---------- HELPERS ----------
+    const pad = n => n.toString().padStart(2,'0');
 
-    // Form
-    document.getElementById('addBtn').onclick=()=>{ document.getElementById('formModal').style.display="flex"; };
-    function fecharForm(){ document.getElementById('formModal').style.display="none"; }
+    // pega HH:MM de qualquer formato comum (inclui 1899-12-30T19:02 etc.)
+    function parseHoraToHM(raw){
+      if(raw == null) return {hh:0, mm:0};
+      const s = String(raw).trim();
+
+      // ISO ou texto com T19:02
+      let m = s.match(/T(\d{2}):(\d{2})/);
+      if(m) return {hh: +m[1], mm: +m[2]};
+
+      // HH:MM em qualquer lugar
+      m = s.match(/(\d{1,2}):(\d{2})/);
+      if(m) return {hh: Math.min(23,+m[1]), mm: Math.min(59,+m[2])};
+
+      // número fracionário (excel time)
+      const num = Number(s.replace(',','.'));
+      if(Number.isFinite(num)){
+        if(num > 1){ // serial date -> pega só a fração
+          const frac = num - Math.floor(num);
+          const total = Math.round(frac * 1440);
+          return {hh: Math.floor(total/60), mm: total%60};
+        }else if(num >= 0){
+          const total = Math.round(num * 1440);
+          return {hh: Math.floor(total/60), mm: total%60};
+        }
+      }
+      return {hh:0, mm:0};
+    }
+    const formatHora = raw => {
+      const {hh, mm} = parseHoraToHM(raw);
+      return `${pad(hh)}:${pad(mm)}`;
+    };
+    const formatValor = v => Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+
+    // ---------- RENDER ----------
+    async function carregarAgenda(inicio=null, fim=null){
+      const box = document.getElementById('lista');
+      box.innerHTML = "Carregando...";
+
+      const res = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
+      let eventos = await res.json();
+
+      // Filtro por período
+      if(inicio && fim){
+        const de = new Date(inicio), ate = new Date(fim);
+        eventos = eventos.filter(ev => {
+          const d = new Date(ev.data);
+          // normaliza só a data
+          return d >= de && d <= ate;
+        });
+      }
+
+      // Agrupar por DIA (yyyy-mm-dd)
+      const grupos = {};
+      for(const ev of eventos){
+        const d = new Date(ev.data);
+        const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+        if(!grupos[key]) grupos[key] = [];
+        const hm = parseHoraToHM(ev.hora);
+        grupos[key].push({...ev, _hh: hm.hh, _mm: hm.mm});
+      }
+
+      box.innerHTML = "";
+      const dias = Object.keys(grupos).sort(); // por data
+
+      if(!dias.length){
+        box.innerHTML = "<p style='opacity:.85'>Sem eventos no período.</p>";
+        return;
+      }
+
+      for(const k of dias){
+        const d = new Date(k);
+        const dia = pad(d.getDate());
+        const mes = d.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
+
+        // Ordena por hora dentro do dia
+        grupos[k].sort((a,b)=> (a._hh*60+a._mm) - (b._hh*60+b._mm));
+
+        const itens = grupos[k].map(ev => `
+          <div class="linha" onclick="abrirModal('${k}','${ev.cantor.replace(/'/g,"\\'")}','${formatHora(ev.hora)}','${ev.valor}')">
+            <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
+          </div>
+        `).join("");
+
+        box.innerHTML += `
+          <section class="grupo">
+            <div class="dia">${dia}<small>${mes}</small></div>
+            <div class="itens">${itens}</div>
+          </section>
+        `;
+      }
+    }
+
+    // ---------- MODAIS ----------
+    function abrirModal(dataISO,cantor,hora,valor){
+      const d = new Date(dataISO);
+      const dataLegivel = d.toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+      document.getElementById('m_data').textContent = dataLegivel;
+      document.getElementById('m_cantor').textContent = cantor;
+      document.getElementById('m_hora').textContent = hora;
+      document.getElementById('m_valor').textContent = formatValor(valor);
+      document.getElementById('modal').style.display = "flex";
+    }
+    function fecharModal(){ document.getElementById('modal').style.display = "none"; }
+
+    // Form novo registro
+    document.getElementById('addBtn').onclick = () => {
+      document.getElementById('f_data').value = "";
+      document.getElementById('f_cantor').value = "";
+      document.getElementById('f_hora').value = "";
+      document.getElementById('f_valor').value = "";
+      document.getElementById('formModal').style.display = "flex";
+    };
+    function fecharForm(){ document.getElementById('formModal').style.display = "none"; }
+
     async function salvarRegistro(){
-      const data=document.getElementById('f_data').value, cantor=document.getElementById('f_cantor').value, hora=document.getElementById('f_hora').value;
-      let valor=document.getElementById('f_valor').value.replace(',','.');
-      valor=parseFloat(valor)||0;
-      await fetch(API_URL,{method:"POST",body:JSON.stringify({empresa:EMPRESA,data,cantor,hora,valor})});
-      fecharForm(); carregarAgenda();
+      const data = document.getElementById('f_data').value;
+      const cantor = document.getElementById('f_cantor').value;
+      const hora = document.getElementById('f_hora').value;
+      let valor = document.getElementById('f_valor').value.replace(',', '.');
+      valor = parseFloat(valor) || 0;
+
+      await fetch(API_URL, {
+        method: "POST",
+        body: JSON.stringify({ empresa: EMPRESA, data, cantor, hora, valor })
+      });
+
+      fecharForm();
+      carregarAgenda();
     }
 
-    // Calendário
-    flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(dates)=>{if(dates.length===2) carregarAgenda(dates[0],dates[1]);}});
+    // Calendário (filtro)
+    flatpickr("#calendarBtn", {
+      mode: "range",
+      dateFormat: "Y-m-d",
+      onClose: (dates) => { if (dates.length === 2) carregarAgenda(dates[0], dates[1]); }
+    });
+
     verificarLogin();
   </script>
 </body>
