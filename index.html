@@ -108,12 +108,20 @@
   <!-- Estrelas na frente -->
   <div id="stars-front"></div>
 
+  <!-- Modal login -->
+  <div id="loginModal">
+    <div id="loginBox">
+      <h3>Login</h3>
+      <input type="password" id="senha" placeholder="Digite a senha"/>
+      <button class="btn" onclick="login()">Entrar</button>
+      <div id="loginMsg" style="color:#f44;margin-top:6px;"></div>
+    </div>
+  </div>
+
   <!-- Modal detalhes -->
   <div id="modal"><div class="modal-box"><h3>Detalhes <span id="editBtn">✏️</span></h3><div class="kv"><span>Data</span><b id="m_data"></b></div><div class="kv"><span>Cantor</span><b id="m_cantor"></b></div><div class="kv"><span>Horário</span><b id="m_hora"></b></div><div class="kv"><span>Valor</span><b id="m_valor"></b></div><button class="btn close" onclick="fecharModal()">Fechar</button></div></div>
   <!-- Modal form -->
   <div id="formModal"><div class="modal-box"><h3 id="formTitle">Novo</h3><label>Data</label><input type="date" id="f_data"/><label>Cantor</label><input type="text" id="f_cantor"/><label>Horário</label><input type="time" id="f_hora"/><label>Valor</label><input type="text" id="f_valor" inputmode="decimal" placeholder="0,00"/><button class="btn" onclick="salvarRegistro()">Salvar</button><button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button></div></div>
-  <!-- Login -->
-  <div id="loginModal"><div id="loginBox"><h3>Login</h3><input type="password" id="senha"/><button class="btn" onclick="login()">Entrar</button><div id="loginMsg" style="color:#f44;margin-top:6px;"></div></div></div>
   <!-- Loader -->
   <div id="loader"><div class="spinner"></div></div>
 
@@ -122,7 +130,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
-    // Estrelas animadas (atrás e na frente)
+    // Estrelas
     function criarEstrelas(container, qtd){
       for(let i=0;i<qtd;i++){
         let s=document.createElement('div');
@@ -152,8 +160,31 @@
     function mostrarLoader(){document.getElementById('loader').style.display="flex";}
     function esconderLoader(){document.getElementById('loader').style.display="none";}
 
-    function verificarLogin(){const e=localStorage.getItem("empresa");if(e){EMPRESA=e;document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";carregarAgenda();}}
-    function login(){const s=document.getElementById('senha').value.trim();if(SENHAS[s]){EMPRESA=SENHAS[s];localStorage.setItem("empresa",EMPRESA);document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";carregarAgenda();}else{document.getElementById('loginMsg').textContent="Senha incorreta.";}}
+    function verificarLogin(){
+      const e=localStorage.getItem("empresa");
+      if(e){
+        EMPRESA=e;
+        document.getElementById('empresaNome').textContent=EMPRESA;
+        document.getElementById('loginModal').style.display="none";
+        carregarAgenda();
+      } else {
+        // se não tiver login salvo, abre popup
+        document.getElementById('loginModal').style.display="flex";
+      }
+    }
+
+    function login(){
+      const s=document.getElementById('senha').value.trim();
+      if(SENHAS[s]){
+        EMPRESA=SENHAS[s];
+        localStorage.setItem("empresa",EMPRESA);
+        document.getElementById('empresaNome').textContent=EMPRESA;
+        document.getElementById('loginModal').style.display="none";
+        carregarAgenda();
+      } else {
+        document.getElementById('loginMsg').textContent="Senha incorreta.";
+      }
+    }
 
     async function carregarAgenda(){
       mostrarLoader();
@@ -168,15 +199,25 @@
         filtroDe=segunda;filtroAte=domingo;
         calendar.setDate([segunda,domingo],true);
       }
-      if(filtroDe&&filtroAte){const from=toDateKey(filtroDe),to=toDateKey(filtroAte);eventos=eventos.filter(ev=>{const k=toDateKey(ev.data);return k&&k>=from&&k<=to;});}
+      if(filtroDe&&filtroAte){
+        const from=toDateKey(filtroDe),to=toDateKey(filtroAte);
+        eventos=eventos.filter(ev=>{const k=toDateKey(ev.data);return k&&k>=from&&k<=to;});
+      }
 
-      const grupos={};for(const ev of eventos){const k=toDateKey(ev.data);if(!k)continue;const hm=parseHoraToHM(ev.hora);(grupos[k] ||= []).push({...ev,_hh:hm.hh,_mm:hm.mm});}
+      const grupos={};
+      for(const ev of eventos){
+        const k=toDateKey(ev.data);if(!k)continue;
+        const hm=parseHoraToHM(ev.hora);
+        (grupos[k] ||= []).push({...ev,_hh:hm.hh,_mm:hm.mm});
+      }
 
-      const dias=Object.keys(grupos).sort();if(!dias.length){box.innerHTML="<p>Sem eventos no período.</p>";esconderLoader();return;}
+      const dias=Object.keys(grupos).sort();
+      if(!dias.length){box.innerHTML="<p>Sem eventos no período.</p>";esconderLoader();return;}
 
       const hojeKey=toDateKey(new Date());
       for(const k of dias){
-        const [y,m,d]=k.split('-').map(Number);const dia=pad(d),mes=new Date(y,m-1,d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();
+        const [y,m,d]=k.split('-').map(Number);
+        const dia=pad(d),mes=new Date(y,m-1,d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();
         grupos[k].sort((a,b)=>(a._hh*60+a._mm)-(b._hh*60+b._mm));
         const passado=k<hojeKey?" passado":"";
         const itens=grupos[k].map(ev=>`<div class="linha${passado}" onclick="abrirModal('${k}','${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')"><div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div></div>`).join("");
@@ -185,12 +226,30 @@
       esconderLoader();
     }
 
-    function abrirModal(key,cantor,hora,valor){document.getElementById('m_data').textContent=new Date(key).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});document.getElementById('m_cantor').textContent=cantor;document.getElementById('m_hora').textContent=hora;document.getElementById('m_valor').textContent=formatValor(valor);EDITANDO={data:key,cantor,hora,valor};document.getElementById('modal').style.display="flex";}
+    function abrirModal(key,cantor,hora,valor){
+      document.getElementById('m_data').textContent=new Date(key).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+      document.getElementById('m_cantor').textContent=cantor;
+      document.getElementById('m_hora').textContent=hora;
+      document.getElementById('m_valor').textContent=formatValor(valor);
+      EDITANDO={data:key,cantor,hora,valor};
+      document.getElementById('modal').style.display="flex";
+    }
     function fecharModal(){document.getElementById('modal').style.display="none";}
     document.getElementById('editBtn').onclick=()=>{if(EDITANDO){document.getElementById('formTitle').textContent="Editar Registro";document.getElementById('f_data').value=EDITANDO.data;document.getElementById('f_cantor').value=EDITANDO.cantor;document.getElementById('f_hora').value=formatHora(EDITANDO.hora);document.getElementById('f_valor').value=EDITANDO.valor;fecharModal();document.getElementById('formModal').style.display="flex";}};
     document.getElementById('addBtn').onclick=()=>{EDITANDO=null;document.getElementById('formTitle').textContent="Novo Registro";document.getElementById('f_data').value="";document.getElementById('f_cantor').value="";document.getElementById('f_hora').value="";document.getElementById('f_valor').value="";document.getElementById('formModal').style.display="flex";};
     function fecharForm(){document.getElementById('formModal').style.display="none";}
-    async function salvarRegistro(){mostrarLoader();const data=document.getElementById('f_data').value;const cantor=document.getElementById('f_cantor').value;const hora=document.getElementById('f_hora').value;let valor=document.getElementById('f_valor').value.replace(',','.');valor=parseFloat(valor)||0;const payload={empresa:EMPRESA,data,cantor,hora,valor};if(EDITANDO)payload.edit=true;await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});fecharForm();carregarAgenda();}
+    async function salvarRegistro(){
+      mostrarLoader();
+      const data=document.getElementById('f_data').value;
+      const cantor=document.getElementById('f_cantor').value;
+      const hora=document.getElementById('f_hora').value;
+      let valor=document.getElementById('f_valor').value.replace(',','.');
+      valor=parseFloat(valor)||0;
+      const payload={empresa:EMPRESA,data,cantor,hora,valor};
+      if(EDITANDO)payload.edit=true;
+      await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});
+      fecharForm();carregarAgenda();
+    }
 
     let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}});
     verificarLogin();
