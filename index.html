@@ -115,10 +115,18 @@
   </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxYMBajuMPXfbaUaex-bPnAkcuieR2Ol_yoonZ26k30JWUfiYHozu7udS_q2TLsX1eC/exec"; 
+// URL do Apps Script que retorna os eventos filtrados por empresa
+const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec"; 
 let empresa = null;
 
-// Verifica se já tem login salvo
+// Senhas fixas no front
+const SENHAS = {
+  "1234": "Mercatto Delícia",
+  "5678": "Villa Gourmet",
+  "9999": "Delícia Gourmet"
+};
+
+// Checa se já está logado
 function verificarLogin(){
   const e = localStorage.getItem("empresa");
   if(e){
@@ -129,13 +137,11 @@ function verificarLogin(){
   }
 }
 
-// Faz login com senha
-async function login(){
+// Faz login com senha fixa
+function login(){
   const senha = document.getElementById("senha").value;
-  const r = await fetch(API_URL+"?login=1&senha="+senha);
-  const data = await r.json();
-  if(data.ok){
-    empresa = data.empresa;
+  if(SENHAS[senha]){
+    empresa = SENHAS[senha];
     localStorage.setItem("empresa", empresa);
     document.getElementById("empresaNome").textContent = empresa;
     document.getElementById("loginModal").style.display="none";
@@ -149,7 +155,7 @@ async function login(){
 async function carregarAgenda(){
   const lista = document.getElementById("agenda");
   lista.innerHTML="<p>Carregando...</p>";
-  const res = await fetch(API_URL+"?empresa="+empresa);
+  const res = await fetch(API_URL+"?empresa="+encodeURIComponent(empresa));
   const eventos = await res.json();
   lista.innerHTML="";
   eventos.forEach(ev=>{
