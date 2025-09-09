@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>Agenda de Músicos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Great+Vibes&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
@@ -23,7 +23,7 @@
       margin:0;
       background:url('https://cdn.venngage.com/template/thumbnail/small/16d941ee-2e8e-49ac-889c-208297e1daad.webp') no-repeat center center/cover;
       color:var(--texto);
-      font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+      font-family:'Poppins',sans-serif;
     }
     .overlay{
       min-height:100vh; background:var(--overlay);
@@ -72,7 +72,7 @@
     .linha .texto{ font-weight:700; color:#fff; }
     .linha .hora{ color:var(--muted); font-weight:700; margin-left:10px; }
 
-    /* Botão ➕ canto inferior esquerdo */
+    /* Botão ➕ */
     #addBtn{
       position:fixed; bottom:20px; left:20px;
       width:48px; height:48px;
@@ -101,7 +101,8 @@
     /* Form modal */
     #formModal .modal-box{ background:#fff; color:#000; }
     #formModal label{ display:block; margin-top:8px; font-size:14px; }
-    #formModal input{ width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; margin-top:4px; }
+    #formModal input{ width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; margin-top:4px; font-size:16px; }
+    #formModal input:focus{ outline:2px solid var(--amarelo); }
     #formModal .btn{ margin-top:12px; width:100%; }
 
     /* Login */
@@ -152,7 +153,7 @@
       <label>Horário</label>
       <input type="time" id="f_hora">
       <label>Valor</label>
-      <input type="number" id="f_valor" step="0.01">
+      <input type="text" id="f_valor" inputmode="decimal" placeholder="0,00">
       <button class="btn" onclick="salvarRegistro()">Salvar</button>
       <button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button>
     </div>
@@ -228,7 +229,9 @@
     document.getElementById('addBtn').onclick=()=>{ document.getElementById('formModal').style.display="flex"; };
     function fecharForm(){ document.getElementById('formModal').style.display="none"; }
     async function salvarRegistro(){
-      const data=document.getElementById('f_data').value, cantor=document.getElementById('f_cantor').value, hora=document.getElementById('f_hora').value, valor=document.getElementById('f_valor').value;
+      const data=document.getElementById('f_data').value, cantor=document.getElementById('f_cantor').value, hora=document.getElementById('f_hora').value;
+      let valor=document.getElementById('f_valor').value.replace(',','.');
+      valor=parseFloat(valor)||0;
       await fetch(API_URL,{method:"POST",body:JSON.stringify({empresa:EMPRESA,data,cantor,hora,valor})});
       fecharForm(); carregarAgenda();
     }
