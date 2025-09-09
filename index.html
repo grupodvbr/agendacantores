@@ -207,6 +207,7 @@
     const SENHAS = { "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
     let EMPRESA = null;
     let EDITANDO = null;
+    let filtroInicio = null, filtroFim = null;
 
     function mostrarLoader(){ document.getElementById('loader').style.display="flex"; }
     function esconderLoader(){ document.getElementById('loader').style.display="none"; }
@@ -249,12 +250,22 @@
     const formatValor = v => Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
     // ---------- RENDER ----------
-    async function carregarAgenda(inicio=null, fim=null){
+    async function carregarAgenda(){
       mostrarLoader();
       const box = document.getElementById('lista');
       box.innerHTML = "";
       const res = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
       let eventos = await res.json();
+
+      // aplica filtro de período, se existir
+      if(filtroInicio && filtroFim){
+        const de = new Date(filtroInicio);
+        const ate = new Date(filtroFim);
+        eventos = eventos.filter(ev=>{
+          const d = new Date(ev.data);
+          return d >= de && d <= ate;
+        });
+      }
 
       const grupos={};
       for(const ev of eventos){
@@ -275,6 +286,9 @@
             <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
           </div>`).join("");
         box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
+      }
+      if(!Object.keys(grupos).length){
+        box.innerHTML = "<p style='opacity:.8'>Sem eventos no período selecionado.</p>";
       }
       esconderLoader();
     }
@@ -332,8 +346,18 @@
       carregarAgenda();
     }
 
-    // Calendário
-    flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(d)=>{if(d.length===2)carregarAgenda(d[0],d[1]);}});
+    // Calendário com filtro
+    flatpickr("#calendarBtn",{
+      mode:"range",dateFormat:"Y-m-d",
+      onClose:(d)=>{
+        if(d.length===2){
+          filtroInicio=d[0]; 
+          filtroFim=d[1];
+          carregarAgenda();
+        }
+      }
+    });
+
     verificarLogin();
   </script>
 </body>
