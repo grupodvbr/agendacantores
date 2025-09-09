@@ -4,91 +4,140 @@
   <meta charset="UTF-8">
   <title>Agenda de Músicos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
-
   <style>
-    body{margin:0;font-family:'Inter',sans-serif;background:#0b0f29;color:#fff;}
-    header{text-align:center;padding:20px;position:relative;}
-    header img{height:70px;margin-bottom:10px;}
-    header h1{margin:0;color:#ffd700;font-size:24px;}
-    #editBtn{position:absolute;top:20px;right:20px;cursor:pointer;font-size:20px;}
-    .agenda{max-width:650px;margin:20px auto;background:rgba(255,255,255,.05);padding:20px;border-radius:16px;}
-    .evento{display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.1);padding:10px 0;}
-    .data{text-align:center;width:70px;font-weight:bold;color:#ffd700;}
-    .info{flex:1;margin-left:15px;}
-    .info h3{margin:0;}
-    .novo{text-align:center;margin:20px;}
-    button{padding:10px 20px;border:none;border-radius:8px;background:#ffd700;font-weight:bold;cursor:pointer;}
-    #formModal,#loginModal,#editModal{position:fixed;inset:0;background:rgba(0,0,0,.7);display:none;align-items:center;justify-content:center;z-index:1000;}
-    .box{background:#fff;color:#000;padding:20px;border-radius:12px;width:320px;max-height:80vh;overflow:auto;}
-    .box h2{margin-top:0;}
-    label{display:block;margin-top:10px;}
-    input{width:100%;padding:8px;margin-top:4px;border:1px solid #ccc;border-radius:6px;}
-    .registro{border:1px solid #ddd;padding:10px;margin:8px 0;border-radius:8px;}
-    .registro button{margin-top:6px;}
+    body {
+      margin:0;
+      font-family: 'Poppins', sans-serif;
+      background:url('https://cdn.venngage.com/template/thumbnail/small/16d941ee-2e8e-49ac-889c-208297e1daad.webp') no-repeat center center/cover;
+      color:#fff;
+    }
+    .overlay {
+      background:rgba(10,0,30,0.75);
+      min-height:100vh;
+      padding:30px 20px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+    }
+    .titulo {
+      text-align:center;
+      margin-bottom:40px;
+    }
+    .titulo h1 {
+      font-size:38px;
+      font-weight:900;
+      color:#ffd700;
+      margin:0;
+    }
+    .titulo h2 {
+      font-size:22px;
+      font-weight:600;
+      margin:5px 0 0;
+      font-style:italic;
+    }
+    .lista {
+      max-width:500px;
+      width:100%;
+    }
+    .evento {
+      display:flex;
+      align-items:center;
+      margin:18px 0;
+    }
+    .data {
+      width:70px;
+      text-align:center;
+      font-weight:bold;
+      font-size:22px;
+      color:#fff;
+    }
+    .data span {
+      display:block;
+      font-size:14px;
+      color:#ffd700;
+    }
+    .detalhes {
+      border-left:3px solid #ffd700;
+      padding-left:15px;
+      margin-left:10px;
+    }
+    .detalhes h3 {
+      margin:0;
+      font-size:18px;
+      font-weight:700;
+    }
+    .detalhes p {
+      margin:2px 0;
+      font-size:14px;
+      color:#ddd;
+    }
+    /* Modal login */
+    #loginModal {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.8);
+      display:flex; align-items:center; justify-content:center;
+      z-index:1000;
+    }
+    #loginBox {
+      background:#fff; color:#000; padding:20px;
+      border-radius:12px; width:320px;
+    }
+    #loginBox h2 { margin-top:0 }
+    #loginBox label { display:block; margin-top:10px; }
+    #loginBox input { width:100%; padding:8px; margin-top:4px;
+      border:1px solid #ccc; border-radius:6px; }
+    #loginMsg { color:red; margin-top:8px; font-size:14px; }
+    button {
+      padding:10px 20px; border:none; border-radius:8px;
+      background:#ffd700; font-weight:bold; cursor:pointer;
+      margin-top:15px;
+    }
   </style>
 </head>
 <body>
-
-  <header>
-    <img src="SUA_LOGO.png">
-    <h1>Agenda de Músicos</h1>
-    <span id="editBtn" onclick="abrirEdicao()">✏️</span>
-  </header>
-
-  <div class="agenda" id="agenda"></div>
-  <div class="novo"><button onclick="abrirForm()">➕ Criar Agenda</button></div>
+  <div class="overlay">
+    <div class="titulo">
+      <h1>Músicos da Semana</h1>
+      <h2 id="empresaNome"></h2>
+    </div>
+    <div class="lista" id="agenda"></div>
+  </div>
 
   <!-- Login -->
   <div id="loginModal">
-    <div class="box">
+    <div id="loginBox">
       <h2>Login Empresa</h2>
       <label>Senha</label>
       <input type="password" id="senha">
       <button onclick="login()">Entrar</button>
-      <p id="loginMsg" style="color:red"></p>
-    </div>
-  </div>
-
-  <!-- Novo evento -->
-  <div id="formModal">
-    <div class="box">
-      <h2>Novo Evento</h2>
-      <label>Cantor</label><input type="text" id="cantor">
-      <label>Data</label><input type="date" id="data">
-      <label>Hora</label><input type="time" id="hora">
-      <label>Valor</label><input type="number" id="valor">
-      <div style="margin-top:10px;text-align:right">
-        <button onclick="salvarAgenda()">Salvar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Editar registros -->
-  <div id="editModal">
-    <div class="box">
-      <h2>Editar Registros</h2>
-      <div id="listaEdit"></div>
+      <p id="loginMsg"></p>
     </div>
   </div>
 
 <script>
-const API_URL = "SUA_URL_APPS_SCRIPT"; 
+const API_URL = "https://script.google.com/macros/s/AKfycbxYMBajuMPXfbaUaex-bPnAkcuieR2Ol_yoonZ26k30JWUfiYHozu7udS_q2TLsX1eC/exec"; // URL publicada do Apps Script
 let empresa = null;
 
-// ========== LOGIN ==========
+// Checa se já está logado
 function verificarLogin(){
   const e = localStorage.getItem("empresa");
-  if(e){ empresa = e; carregarAgenda(); }
-  else{ document.getElementById("loginModal").style.display="flex"; }
+  if(e){
+    empresa = e;
+    document.getElementById("loginModal").style.display="none";
+    document.getElementById("empresaNome").textContent = empresa;
+    carregarAgenda();
+  }
 }
 
+// Faz login com senha
 async function login(){
   const senha = document.getElementById("senha").value;
   const r = await fetch(API_URL+"?login=1&senha="+senha);
   const data = await r.json();
   if(data.ok){
     empresa = data.empresa;
-    localStorage.setItem("empresa",empresa);
+    localStorage.setItem("empresa", empresa);
+    document.getElementById("empresaNome").textContent = empresa;
     document.getElementById("loginModal").style.display="none";
     carregarAgenda();
   }else{
@@ -96,68 +145,26 @@ async function login(){
   }
 }
 
-// ========== LISTAGEM ==========
+// Carrega agenda da empresa
 async function carregarAgenda(){
-  const agendaBox = document.getElementById("agenda");
-  agendaBox.innerHTML="<p>Carregando...</p>";
+  const lista = document.getElementById("agenda");
+  lista.innerHTML="<p>Carregando...</p>";
   const res = await fetch(API_URL+"?empresa="+empresa);
   const eventos = await res.json();
-  agendaBox.innerHTML="";
-  eventos.forEach((ev,i)=>{
-    agendaBox.innerHTML+=`
-      <div class="evento">
-        <div class="data">${new Date(ev.data).getDate()}<br><small>${new Date(ev.data).toLocaleString('pt-BR',{month:'short'})}</small></div>
-        <div class="info"><h3>${ev.cantor}</h3><p>${ev.hora} - R$ ${ev.valor}</p></div>
-      </div>`;
-  });
-}
-
-// ========== NOVO ==========
-function abrirForm(){ document.getElementById("formModal").style.display="flex"; }
-function fecharForm(){ document.getElementById("formModal").style.display="none"; }
-async function salvarAgenda(){
-  const body = {
-    empresa,
-    cantor:document.getElementById("cantor").value,
-    data:document.getElementById("data").value,
-    hora:document.getElementById("hora").value,
-    valor:document.getElementById("valor").value
-  };
-  await fetch(API_URL,{method:"POST",body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
-  fecharForm(); carregarAgenda();
-}
-
-// ========== EDIÇÃO ==========
-async function abrirEdicao(){
-  const res = await fetch(API_URL+"?empresa="+empresa);
-  const eventos = await res.json();
-  const lista = document.getElementById("listaEdit");
   lista.innerHTML="";
-  eventos.forEach((ev,i)=>{
-    lista.innerHTML+=`
-      <div class="registro">
-        <label>Cantor</label><input id="e_cantor${i}" value="${ev.cantor}">
-        <label>Data</label><input type="date" id="e_data${i}" value="${ev.data}">
-        <label>Hora</label><input type="time" id="e_hora${i}" value="${ev.hora}">
-        <label>Valor</label><input type="number" id="e_valor${i}" value="${ev.valor}">
-        <button onclick="salvarEdicao(${i},'${ev.row}')">Salvar</button>
+  eventos.forEach(ev=>{
+    const d = new Date(ev.data);
+    const dia = d.getDate().toString().padStart(2,"0");
+    const mes = d.toLocaleString("pt-BR",{month:"short"});
+    lista.innerHTML += `
+      <div class="evento">
+        <div class="data">${dia}<span>${mes.toUpperCase()}</span></div>
+        <div class="detalhes">
+          <h3>${ev.cantor}</h3>
+          <p>${ev.hora} - R$ ${ev.valor}</p>
+        </div>
       </div>`;
   });
-  document.getElementById("editModal").style.display="flex";
-}
-async function salvarEdicao(i,row){
-  const body={
-    row,
-    empresa,
-    cantor:document.getElementById("e_cantor"+i).value,
-    data:document.getElementById("e_data"+i).value,
-    hora:document.getElementById("e_hora"+i).value,
-    valor:document.getElementById("e_valor"+i).value
-  };
-  await fetch(API_URL+"?edit=1",{method:"POST",body:JSON.stringify(body),headers:{'Content-Type':'application/json'}});
-  alert("Atualizado!");
-  document.getElementById("editModal").style.display="none";
-  carregarAgenda();
 }
 
 verificarLogin();
