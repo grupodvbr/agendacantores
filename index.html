@@ -1,126 +1,80 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Agenda de Músicos</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <!-- Flatpickr (calendário) -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
-    body {
+    :root{
+      --amarelo:#ffd700;
+      --overlay:rgba(10,0,30,.75);
+      --texto:#fff;
+      --muted:#ddd;
+    }
+    body{
       margin:0;
-      font-family: 'Poppins', sans-serif;
+      font-family:'Poppins',system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
       background:url('https://cdn.venngage.com/template/thumbnail/small/16d941ee-2e8e-49ac-889c-208297e1daad.webp') no-repeat center center/cover;
-      color:#fff;
+      color:var(--texto);
     }
-    .overlay {
-      background:rgba(10,0,30,0.75);
-      min-height:100vh;
-      padding:20px;
-      display:flex;
-      flex-direction:column;
-      align-items:center;
+    .overlay{
+      min-height:100vh; background:var(--overlay);
+      padding:20px; display:flex; flex-direction:column; align-items:center;
     }
-    .titulo {
-      text-align:center;
-      margin-bottom:10px;
-      position:relative;
-      width:100%;
+    .titulo{ width:100%; max-width:720px; position:relative; text-align:center; }
+    .titulo h1{ margin:0; color:var(--amarelo); font-weight:900; font-size:38px; letter-spacing:.5px; }
+    .titulo h2{ margin:6px 0 0; font-weight:600; font-size:20px; font-style:italic; }
+
+    /* Botões no topo */
+    .top-actions{ position:absolute; top:0; right:0; display:flex; gap:8px; }
+    .btn{
+      appearance:none; border:none; border-radius:8px; cursor:pointer;
+      background:var(--amarelo); color:#000; font-weight:700;
+      padding:6px 10px; line-height:1;
     }
-    .titulo h1 {
-      font-size:38px;
-      font-weight:900;
-      color:#ffd700;
-      margin:0;
+    #calendarBtn{ min-width:36px; padding:6px 8px; } /* só emoji 📅 */
+
+    /* Lista agrupada */
+    .lista{ width:100%; max-width:720px; margin-top:26px; }
+    .grupo{ display:grid; grid-template-columns:90px 1fr; gap:12px; margin:16px 0; }
+    .dia{
+      display:flex; flex-direction:column; align-items:center; justify-content:center;
+      font-weight:800; font-size:26px; color:#fff; text-transform:uppercase;
     }
-    .titulo h2 {
-      font-size:22px;
-      font-weight:600;
-      margin:5px 0 0;
-      font-style:italic;
+    .dia small{ margin-top:2px; color:var(--amarelo); font-size:12px; letter-spacing:.8px; }
+    .itens{
+      border-left:3px solid var(--amarelo); padding-left:14px;
+      display:flex; flex-direction:column; gap:8px;
     }
-    /* Botão lápis */
-    #editBtn {
-      position:absolute;
-      top:0;
-      right:50px;
-      font-size:20px;
-      cursor:pointer;
-      color:#ffd700;
+    .linha{
+      display:flex; align-items:center; justify-content:space-between;
+      background:rgba(255,255,255,.06); border:1px solid rgba(255,255,255,.12);
+      padding:8px 10px; border-radius:10px;
     }
-    /* Calendário no canto */
-    #calendarFilter {
-      position:absolute;
-      top:0;
-      right:10px;
-      font-size:14px;
-      padding:6px 10px;
-      border:none;
-      border-radius:6px;
-      cursor:pointer;
-      background:#ffd700;
-      color:#000;
-      font-weight:600;
+    .linha .info{ color:var(--muted); font-size:14px; }
+    .linha .titulo-item{ font-weight:700; color:#fff; }
+    .linha .valor{ margin-left:10px; font-weight:800; color:#fff; white-space:nowrap; }
+    .linha .sep{ margin:0 6px; opacity:.6; }
+
+    /* Modal Login */
+    #loginModal{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.8); z-index:1000;
     }
-    .lista {
-      max-width:500px;
-      width:100%;
-      margin-top:30px;
+    #loginBox{
+      width:320px; background:#fff; color:#000; padding:20px; border-radius:12px;
     }
-    .evento {
-      display:flex;
-      align-items:center;
-      margin:18px 0;
-    }
-    .data {
-      width:70px;
-      text-align:center;
-      font-weight:bold;
-      font-size:22px;
-      color:#fff;
-    }
-    .data span {
-      display:block;
-      font-size:14px;
-      color:#ffd700;
-    }
-    .detalhes {
-      border-left:3px solid #ffd700;
-      padding-left:15px;
-      margin-left:10px;
-      flex:1;
-    }
-    .detalhes h3 {
-      margin:0;
-      font-size:18px;
-      font-weight:700;
-      display:flex;
-      justify-content:space-between;
-    }
-    .detalhes p {
-      margin:2px 0;
-      font-size:14px;
-      color:#ddd;
-    }
-    /* Modal login */
-    #loginModal {
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.8);
-      display:flex; align-items:center; justify-content:center;
-      z-index:1000;
-    }
-    #loginBox {
-      background:#fff; color:#000; padding:20px;
-      border-radius:12px; width:320px;
-    }
-    #loginBox h2 { margin-top:0 }
-    #loginBox label { display:block; margin-top:10px; }
-    #loginBox input { width:100%; padding:8px; margin-top:4px;
-      border:1px solid #ccc; border-radius:6px; }
-    #loginMsg { color:red; margin-top:8px; font-size:14px; }
-    button {
-      padding:6px 12px; border:none; border-radius:6px;
-      background:#ffd700; font-weight:bold; cursor:pointer;
-      margin-top:6px;
+    #loginBox h3{ margin:0 0 10px; }
+    #loginBox label{ display:block; margin-top:8px; font-size:14px; }
+    #loginBox input{ width:100%; padding:10px; border:1px solid #ccc; border-radius:8px; margin-top:4px; }
+    #loginMsg{ color:#c62828; font-size:13px; margin-top:6px; }
+
+    @media (max-width:560px){
+      .grupo{ grid-template-columns:70px 1fr; }
+      .dia{ font-size:22px; }
     }
   </style>
 </head>
@@ -129,106 +83,173 @@
     <div class="titulo">
       <h1>Músicos da Semana</h1>
       <h2 id="empresaNome"></h2>
-      <span id="editBtn" title="Gerenciar">✏️</span>
-      <button id="calendarFilter">Selecionar</button>
+
+      <div class="top-actions">
+        <!-- (opcional) lápis para gestão; comente se não usar -->
+        <!-- <button class="btn" title="Gerenciar">✏️</button> -->
+        <button id="calendarBtn" class="btn" title="Selecionar período">📅</button>
+      </div>
     </div>
 
-    <div class="lista" id="agenda"></div>
+    <div class="lista" id="lista"></div>
   </div>
 
   <!-- Login -->
   <div id="loginModal">
     <div id="loginBox">
-      <h2>Login Empresa</h2>
+      <h3>Login da Empresa</h3>
       <label>Senha</label>
-      <input type="password" id="senha">
-      <button onclick="login()">Entrar</button>
-      <p id="loginMsg"></p>
+      <input type="password" id="senha" placeholder="Digite a senha">
+      <button class="btn" style="margin-top:12px" onclick="login()">Entrar</button>
+      <div id="loginMsg"></div>
     </div>
   </div>
 
-<script src="https://cdn.venngage.com/template/thumbnail/small/16d941ee-2e8e-49ac-889c-208297e1daad.webp"></script>
-<script>
-// URL do Apps Script
-const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec"; 
-let empresa = null;
+  <!-- Scripts -->
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 
-// Senhas fixas
-const SENHAS = {
-  "1234": "Mercatto Delícia",
-  "5678": "Villa Gourmet",
-  "9999": "Delícia Gourmet"
-};
+  <script>
+  // ================== CONFIG ==================
+  const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec"; // <-- troque pela sua
+  const SENHAS = { "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
+  let EMPRESA = null;
 
-// ===== LOGIN =====
-function verificarLogin(){
-  const e = localStorage.getItem("empresa");
-  if(e){
-    empresa = e;
-    document.getElementById("loginModal").style.display="none";
-    document.getElementById("empresaNome").textContent = empresa;
-    carregarAgenda();
-  }
-}
-function login(){
-  const senha = document.getElementById("senha").value;
-  if(SENHAS[senha]){
-    empresa = SENHAS[senha];
-    localStorage.setItem("empresa", empresa);
-    document.getElementById("empresaNome").textContent = empresa;
-    document.getElementById("loginModal").style.display="none";
-    carregarAgenda();
-  }else{
-    document.getElementById("loginMsg").textContent = "Senha incorreta!";
-  }
-}
-
-// ===== LISTAGEM =====
-async function carregarAgenda(filtroDe=null, filtroAte=null){
-  const lista = document.getElementById("agenda");
-  lista.innerHTML="<p>Carregando...</p>";
-  const res = await fetch(API_URL+"?empresa="+encodeURIComponent(empresa));
-  let eventos = await res.json();
-
-  // aplica filtro por data
-  if(filtroDe && filtroAte){
-    const de = new Date(filtroDe);
-    const ate = new Date(filtroAte);
-    eventos = eventos.filter(ev=>{
-      const d = new Date(ev.data);
-      return d >= de && d <= ate;
-    });
-  }
-
-  lista.innerHTML="";
-  eventos.forEach(ev=>{
-    const d = new Date(ev.data);
-    const dia = d.getDate().toString().padStart(2,"0");
-    const mes = d.toLocaleString("pt-BR",{month:"short"});
-    lista.innerHTML += `
-      <div class="evento">
-        <div class="data">${dia}<span>${mes.toUpperCase()}</span></div>
-        <div class="detalhes">
-          <h3>${ev.cantor} <span>R$ ${ev.valor}</span></h3>
-          <p>${ev.hora}</p>
-        </div>
-      </div>`;
-  });
-}
-
-// ===== CALENDÁRIO =====
-flatpickr("#calendarFilter", {
-  mode: "range",
-  dateFormat: "Y-m-d",
-  locale: "pt",
-  onClose: function(selectedDates){
-    if(selectedDates.length === 2){
-      carregarAgenda(selectedDates[0], selectedDates[1]);
+  // ================== LOGIN ==================
+  function verificarLogin(){
+    const e = localStorage.getItem("empresa");
+    if(e){
+      EMPRESA = e;
+      document.getElementById('empresaNome').textContent = EMPRESA;
+      document.getElementById('loginModal').style.display = "none";
+      carregarAgenda();
     }
   }
-});
+  function login(){
+    const s = document.getElementById('senha').value.trim();
+    if(SENHAS[s]){
+      EMPRESA = SENHAS[s];
+      localStorage.setItem("empresa", EMPRESA);
+      document.getElementById('empresaNome').textContent = EMPRESA;
+      document.getElementById('loginModal').style.display = "none";
+      carregarAgenda();
+    }else{
+      document.getElementById('loginMsg').textContent = "Senha incorreta.";
+    }
+  }
 
-verificarLogin();
-</script>
+  // ================== HELPERS ==================
+  function pad2(n){ return n.toString().padStart(2,'0'); }
+
+  // aceita "21:5", "21:05", "21:05:00", "21.05", etc → "21:05"
+  function formatHora(str){
+    if(!str) return "";
+    let t = String(str).trim();
+    t = t.replace('.', ':');
+    // se vier como ISO (ex: "2025-09-12T21:00:00Z"), tenta extrair HH:mm
+    const mIso = t.match(/T(\d{2}):(\d{2})/);
+    if(mIso) return `${mIso[1]}:${mIso[2]}`;
+    const m = t.match(/(\d{1,2})[:hH\.]?(\d{1,2})?/);
+    if(!m) return t;
+    const hh = pad2(Math.min(23, parseInt(m[1],10)));
+    const mm = pad2(Math.min(59, parseInt(m[2]||"0",10)));
+    return `${hh}:${mm}`;
+  }
+  function formatValor(v){
+    const n = Number(v);
+    if(Number.isFinite(n)) return n.toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+    return `R$ ${v}`;
+  }
+  function keyData(iso){
+    // normaliza para yyyy-mm-dd (sem hora) para agrupar
+    const d = new Date(iso);
+    const y = d.getFullYear(), m = pad2(d.getMonth()+1), dd = pad2(d.getDate());
+    return `${y}-${m}-${dd}`;
+  }
+  function labelDia(iso){
+    const d = new Date(iso);
+    const dia = pad2(d.getDate());
+    const mes = d.toLocaleString('pt-BR',{month:'short'}).replace('.','');
+    return {dia, mes: mes.toUpperCase()};
+  }
+
+  // ================== LISTAGEM ==================
+  async function carregarAgenda(inicio=null, fim=null){
+    const box = document.getElementById('lista');
+    box.innerHTML = "<p style='opacity:.8'>Carregando...</p>";
+
+    const res = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
+    let eventos = await res.json();
+
+    // filtro período (se houver)
+    if(inicio && fim){
+      const de = new Date(inicio), ate = new Date(fim);
+      eventos = eventos.filter(ev=>{
+        const d = new Date(ev.data);
+        return d >= de && d <= ate;
+      });
+    }
+
+    // ordena por data e hora
+    eventos.sort((a,b)=>{
+      const da = new Date(a.data) - new Date(b.data);
+      if(da !== 0) return da;
+      return formatHora(a.hora).localeCompare(formatHora(b.hora));
+    });
+
+    // agrupa por dia
+    const grupos = {};
+    for(const ev of eventos){
+      const k = keyData(ev.data);
+      if(!grupos[k]) grupos[k] = [];
+      grupos[k].push(ev);
+    }
+
+    // render
+    box.innerHTML = "";
+    const diasOrdenados = Object.keys(grupos).sort();
+    if(diasOrdenados.length === 0){
+      box.innerHTML = "<p style='opacity:.8'>Sem eventos no período.</p>";
+      return;
+    }
+
+    for(const k of diasOrdenados){
+      const {dia, mes} = labelDia(k);
+      const itens = grupos[k]
+        .map(ev=>{
+          const hora = formatHora(ev.hora);
+          const valor = formatValor(ev.valor);
+          // cantor – 22:20 – R$ 500
+          return `
+            <div class="linha">
+              <div class="titulo-item">
+                ${ev.cantor} <span class="sep">-</span> <span class="info">${hora}</span> <span class="sep">-</span> <span class="valor">${valor}</span>
+              </div>
+            </div>`;
+        }).join("");
+
+      box.innerHTML += `
+        <div class="grupo">
+          <div class="dia">${dia}<small>${mes}</small></div>
+          <div class="itens">${itens}</div>
+        </div>`;
+    }
+  }
+
+  // ================== CALENDÁRIO ==================
+  // Botão com emoji 📅 abre o seletor de intervalo
+  const btn = document.getElementById('calendarBtn');
+  const fp = flatpickr(btn, {
+    mode: "range",
+    dateFormat: "Y-m-d",
+    onClose: (dates)=>{
+      if(dates.length===2){
+        carregarAgenda(dates[0], dates[1]);
+      }
+    }
+  });
+
+  // start
+  verificarLogin();
+  </script>
 </body>
 </html>
