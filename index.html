@@ -7,77 +7,192 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+
   <style>
-    body{margin:0;font-family:sans-serif;background:#0b0b15;color:#fff;}
-    header{padding:12px 18px;background:rgba(0,0,0,.6);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:20}
-    h1{margin:0;font-size:20px;color:#ffd700;}
-    h2{margin:0;font-size:14px;font-weight:400;font-style:italic}
-    #calendarBtn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700;background:#ffd700;color:#000}
-    .content{padding:18px;max-width:800px;margin:0 auto}
+    :root{
+      --amarelo:#ffd700;
+      --overlay:rgba(10,0,30,.78);
+      --texto:#fff; --muted:#d8d8d8;
+      --card:rgba(255,255,255,.06);
+      --line:rgba(255,255,255,.18);
+      --verde-claro:rgba(0,255,128,0.15);
+    }
+    html,body{height:100%;margin:0;}
+    body{font-family:'Poppins',sans-serif;background:#0b0b15;color:var(--texto);overflow-x:hidden}
+
+    /* Estrelas */
+    #stars,#stars-front{position:fixed;top:0;left:0;width:100%;height:100%;pointer-events:none;z-index:0}
+    .star{position:absolute;background:#fff;border-radius:50%;opacity:.9;
+      box-shadow:0 0 6px #fff,0 0 12px #ffd700;animation:fall linear infinite}
+    @keyframes fall{0%{transform:translateY(-10vh);}100%{transform:translateY(110vh);} }
+
+    /* Header */
+    header{position:sticky;top:0;z-index:10;background:var(--overlay);
+      display:flex;justify-content:space-between;align-items:center;padding:10px 16px}
+    .title{margin:0;font-size:22px;font-weight:900;color:var(--amarelo);}
+    .subtitle{margin:0;font-size:14px;font-weight:500;color:#fff;font-style:italic}
+    #calendarBtn{padding:8px 12px;border:none;border-radius:8px;background:var(--amarelo);color:#000;font-weight:700;cursor:pointer}
+
+    /* Conteúdo */
+    .content{padding:16px;max-width:900px;margin:0 auto;position:relative;z-index:2}
     .lista{display:flex;flex-direction:column;gap:14px}
     .grupo{display:grid;grid-template-columns:70px 1fr;gap:14px}
-    .dia{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
-    .dia small{color:#ffd700;font-size:12px}
-    .itens{border-left:4px solid #ffd700;padding-left:12px;display:flex;flex-direction:column;gap:10px}
-    .linha{background:rgba(255,255,255,.06);padding:10px;border-radius:10px;display:flex;justify-content:space-between}
-    .hora{color:#aaa}
-    .passado{background:rgba(0,255,128,.15)!important}
+    .dia{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:24px}
+    .dia small{color:var(--amarelo);font-size:12px}
+    .itens{border-left:4px solid var(--amarelo);padding-left:12px;display:flex;flex-direction:column;gap:10px}
+    .linha{background:var(--card);padding:10px;border-radius:10px;display:flex;justify-content:space-between;cursor:pointer;transition:.2s}
+    .linha:hover{background:rgba(255,215,0,.1)}
+    .hora{color:var(--muted)}
+    .passado{background:var(--verde-claro)!important;border:1px solid rgba(0,255,128,.4)}
+
     /* Loader */
-    #loader{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:100}
-    .spinner{width:60px;height:60px;border:6px solid rgba(255,255,255,.2);border-top:6px solid #ffd700;border-radius:50%;animation:spin 1s linear infinite}
+    #loader{position:fixed;inset:0;background:rgba(0,0,0,.75);display:none;align-items:center;justify-content:center;z-index:50}
+    .spinner{width:60px;height:60px;border:6px solid rgba(255,255,255,.2);border-top:6px solid var(--amarelo);border-radius:50%;animation:spin 1s linear infinite}
     @keyframes spin{to{transform:rotate(360deg)}}
+
     /* Botão + */
-    #addBtn{position:fixed;bottom:20px;right:20px;background:#ffd700;color:#000;border:none;border-radius:50%;font-size:28px;font-weight:900;width:54px;height:54px;cursor:pointer;z-index:200}
+    #addBtn{position:fixed;bottom:20px;right:20px;background:var(--amarelo);color:#000;border:none;border-radius:50%;width:54px;height:54px;font-size:30px;font-weight:900;cursor:pointer;z-index:40}
+
+    /* Modais */
+    #modal,#formModal,#loginModal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:center;justify-content:center;z-index:100}
+    .modal-box{background:#101326;color:#fff;border-radius:12px;padding:16px;width:min(92vw,400px)}
+    .modal-box h3{margin:0 0 12px;display:flex;justify-content:space-between;align-items:center}
+    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.15)}
+    .kv:last-child{border-bottom:none}
+    .kv b{color:var(--amarelo)}
+    .btn{margin-top:10px;width:100%;padding:10px;border:none;border-radius:8px;font-weight:700;cursor:pointer}
+    .btn.delete{background:#dc2626;color:#fff}
+    .btn.close{background:#ccc;color:#000}
+
+    #formModal .modal-box{background:#fff;color:#000}
+    #formModal input{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;margin-top:6px;font-size:15px}
+
+    #loginBox{background:#fff;padding:20px;border-radius:12px;width:300px}
   </style>
 </head>
 <body>
+  <!-- Estrelas -->
+  <div id="stars"></div>
+  <div id="stars-front"></div>
+
+  <!-- Header -->
   <header>
     <div>
-      <h1>Agenda</h1>
-      <h2 id="empresaNome">Mercatto Delícia</h2>
+      <div class="title">Agenda</div>
+      <div id="empresaNome" class="subtitle"></div>
     </div>
     <input id="calendarBtn" readonly />
   </header>
 
-  <div class="content"><main class="lista" id="lista"></main></div>
+  <!-- Conteúdo -->
+  <div class="content"><main id="lista" class="lista"></main></div>
 
+  <!-- Loader -->
   <div id="loader"><div class="spinner"></div></div>
+
+  <!-- Botão + -->
   <button id="addBtn">+</button>
 
+  <!-- Modal detalhes -->
+  <div id="modal">
+    <div class="modal-box">
+      <h3>Detalhes <span id="editBtn" style="cursor:pointer">✏️</span></h3>
+      <div class="kv"><span>Data</span><b id="m_data"></b></div>
+      <div class="kv"><span>Cantor</span><b id="m_cantor"></b></div>
+      <div class="kv"><span>Hora</span><b id="m_hora"></b></div>
+      <div class="kv"><span>Valor</span><b id="m_valor"></b></div>
+      <button class="btn close" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
+
+  <!-- Modal form -->
+  <div id="formModal">
+    <div class="modal-box">
+      <h3 id="formTitle">Novo</h3>
+      <label>Data</label><input type="date" id="f_data">
+      <label>Cantor</label><input type="text" id="f_cantor">
+      <label>Hora</label><input type="time" id="f_hora">
+      <label>Valor</label><input type="number" id="f_valor" step="0.01">
+      <button class="btn" onclick="salvarRegistro()">Salvar</button>
+      <button id="deleteBtn" class="btn delete" style="display:none" onclick="deleteRegistro()">Excluir</button>
+      <button class="btn close" onclick="fecharForm()">Cancelar</button>
+    </div>
+  </div>
+
+  <!-- Modal login -->
+  <div id="loginModal">
+    <div id="loginBox">
+      <h3>Login</h3>
+      <input type="password" id="senha" placeholder="Digite a senha">
+      <button class="btn" onclick="login()">Entrar</button>
+      <div id="loginMsg" style="color:#d22;font-size:13px;margin-top:6px"></div>
+    </div>
+  </div>
+
 <script>
+/* Estrelas */
+function criarEstrelas(container,qtd){
+  for(let i=0;i<qtd;i++){
+    let s=document.createElement('div');
+    s.className='star';
+    s.style.left=Math.random()*100+'vw';
+    s.style.width=s.style.height=(Math.random()*2+1)+'px';
+    s.style.animationDuration=3+Math.random()*5+'s';
+    s.style.animationDelay=Math.random()*5+'s';
+    container.appendChild(s);
+  }
+}
+criarEstrelas(document.getElementById('stars'),40);
+criarEstrelas(document.getElementById('stars-front'),15);
+
+/* API */
 const API_URL="https://script.google.com/macros/s/AKfycbzk3tiR8XssMBrmabs20JV0Lr9C7WTdzaoSXBgkvS-se9doBdk156XSkfVa5Fn0iQoZ/exec";
-let filtroDe=null,filtroAte=null;
+const SENHAS={"0152":"Mercatto Delícia","1058":"Villa Gourmet","8486":"Delícia Gourmet"};
+let EMPRESA=null,EDITANDO=null,filtroDe=null,filtroAte=null;
 
 const pad=n=>n.toString().padStart(2,"0");
 const toDateKey=d=>{if(!d)return null;const dt=new Date(d);return isNaN(dt)?null:`${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`};
 const formatHora=h=>h?String(h).slice(0,5):"--:--";
+const formatValor=v=>(Number(v)||0).toLocaleString("pt-BR",{style:"currency",currency:"BRL"});
 
 function mostrarLoader(v){document.getElementById("loader").style.display=v?"flex":"none";}
 
+/* Login */
+function verificarLogin(){
+  const e=localStorage.getItem("empresa");
+  if(e){EMPRESA=e;document.getElementById("empresaNome").textContent=EMPRESA;document.getElementById("loginModal").style.display="none";carregarAgenda();}
+  else{document.getElementById("loginModal").style.display="flex";}
+}
+function login(){
+  const s=document.getElementById("senha").value.trim();
+  if(SENHAS[s]){EMPRESA=SENHAS[s];localStorage.setItem("empresa",EMPRESA);document.getElementById("empresaNome").textContent=EMPRESA;document.getElementById("loginModal").style.display="none";carregarAgenda();}
+  else{document.getElementById("loginMsg").textContent="Senha incorreta.";}
+}
+
+/* Carregar */
 async function carregarAgenda(){
   mostrarLoader(true);
-  const box=document.getElementById("lista");
-  box.innerHTML="";
+  const box=document.getElementById("lista");box.innerHTML="";
   try{
-    let eventos=await (await fetch(API_URL)).json();
+    let eventos=await (await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`)).json();
 
-    // segurança: se resposta não for array
-    if(!Array.isArray(eventos)){box.innerHTML="<p>⚠️ Nenhum dado retornado.</p>";mostrarLoader(false);return;}
-
-    // aplica filtro
+    // aplica semana vigente padrão
+    if(!filtroDe&&!filtroAte){
+      const hoje=new Date();const dia=hoje.getDay();
+      const segunda=new Date(hoje);segunda.setDate(hoje.getDate()-((dia+6)%7));
+      const domingo=new Date(segunda);domingo.setDate(segunda.getDate()+6);
+      filtroDe=segunda;filtroAte=domingo;
+      calendar.setDate([segunda,domingo],true);
+    }
     if(filtroDe&&filtroAte){
       const from=toDateKey(filtroDe),to=toDateKey(filtroAte);
-      eventos=eventos.filter(ev=>{
-        const k=toDateKey(ev.data);
-        return k&&k>=from&&k<=to;
-      });
+      eventos=eventos.filter(ev=>{const k=toDateKey(ev.data);return k&&k>=from&&k<=to;});
     }
 
-    // agrupa por data
     const grupos={};
     eventos.forEach(ev=>{
       const k=toDateKey(ev.data);
-      if(!k) return;
+      if(!k)return;
       (grupos[k] ||= []).push(ev);
     });
 
@@ -90,33 +205,73 @@ async function carregarAgenda(){
       const dia=d,mes=new Date(y,m-1,d).toLocaleString("pt-BR",{month:"short"}).toUpperCase();
       const passado=k<hojeKey?" passado":"";
       const itens=grupos[k].map(ev=>
-        `<div class="linha${passado}"><div>${ev.cantor||"—"}</div><div class="hora">${formatHora(ev.hora)}</div></div>`
+        `<div class="linha${passado}" onclick="abrirModal('${k}',${ev.row},'${ev.cantor}','${ev.hora}','${ev.valor}')">
+           <div>${ev.cantor||"—"}</div><div class="hora">${formatHora(ev.hora)}</div>
+         </div>`
       ).join("");
       box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
     });
 
-  }catch(e){
-    console.error(e);
-    document.getElementById("lista").innerHTML="<p>❌ Erro ao carregar.</p>";
-  }
+  }catch(e){console.error(e);document.getElementById("lista").innerHTML="<p>❌ Erro ao carregar.</p>";}
   mostrarLoader(false);
 }
 
-// Flatpickr
+/* Modal */
+function abrirModal(key,row,cantor,hora,valor){
+  document.getElementById("m_data").textContent=new Date(key).toLocaleDateString("pt-BR",{weekday:"short",day:"2-digit",month:"short"});
+  document.getElementById("m_cantor").textContent=cantor;
+  document.getElementById("m_hora").textContent=formatHora(hora);
+  document.getElementById("m_valor").textContent=formatValor(valor);
+  EDITANDO={row,data:key,cantor,hora,valor};
+  document.getElementById("modal").style.display="flex";
+}
+function fecharModal(){document.getElementById("modal").style.display="none";}
+
+/* Form */
+document.getElementById("editBtn").onclick=()=>{if(EDITANDO){
+  document.getElementById("formTitle").textContent="Editar Registro";
+  document.getElementById("f_data").value=EDITANDO.data;
+  document.getElementById("f_cantor").value=EDITANDO.cantor;
+  document.getElementById("f_hora").value=EDITANDO.hora;
+  document.getElementById("f_valor").value=EDITANDO.valor;
+  document.getElementById("deleteBtn").style.display="block";
+  fecharModal();
+  document.getElementById("formModal").style.display="flex";
+}};
+document.getElementById("addBtn").onclick=()=>{EDITANDO=null;
+  document.getElementById("formTitle").textContent="Novo Registro";
+  document.getElementById("f_data").value="";document.getElementById("f_cantor").value="";
+  document.getElementById("f_hora").value="";document.getElementById("f_valor").value="";
+  document.getElementById("deleteBtn").style.display="none";
+  document.getElementById("formModal").style.display="flex";};
+function fecharForm(){document.getElementById("formModal").style.display="none";}
+
+/* Salvar/Excluir */
+async function salvarRegistro(){
+  mostrarLoader(true);
+  const data=document.getElementById("f_data").value;
+  const cantor=document.getElementById("f_cantor").value;
+  const hora=document.getElementById("f_hora").value;
+  const valor=parseFloat(document.getElementById("f_valor").value)||0;
+  const payload={empresa:EMPRESA,data,cantor,hora,valor};
+  if(EDITANDO&&EDITANDO.row){payload.action="update";payload.row=EDITANDO.row;}else{payload.action="create";}
+  await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});
+  fecharForm();carregarAgenda();
+}
+async function deleteRegistro(){
+  if(!EDITANDO||!EDITANDO.row)return;
+  if(!confirm("Excluir registro?"))return;
+  mostrarLoader(true);
+  await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"delete",row:EDITANDO.row})});
+  fecharForm();carregarAgenda();
+}
+
+/* Flatpickr */
 let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"d/m/Y",locale:"pt",
   onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}
 });
 
-// define semana vigente por padrão
-(function(){
-  const hoje=new Date();const dia=hoje.getDay();
-  const segunda=new Date(hoje);segunda.setDate(hoje.getDate()-((dia+6)%7));
-  const domingo=new Date(segunda);domingo.setDate(segunda.getDate()+6);
-  filtroDe=segunda;filtroAte=domingo;
-  calendar.setDate([segunda,domingo],true);
-})();
-
-carregarAgenda();
+verificarLogin();
 </script>
 </body>
 </html>
