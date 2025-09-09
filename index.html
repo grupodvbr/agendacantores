@@ -115,10 +115,10 @@
   </div>
 
 <script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxYMBajuMPXfbaUaex-bPnAkcuieR2Ol_yoonZ26k30JWUfiYHozu7udS_q2TLsX1eC/exec"; // URL publicada do Apps Script
+const API_URL = "https://script.google.com/macros/s/AKfycbxYMBajuMPXfbaUaex-bPnAkcuieR2Ol_yoonZ26k30JWUfiYHozu7udS_q2TLsX1eC/exec"; 
 let empresa = null;
 
-// Checa se já está logado
+// Verifica se já tem login salvo
 function verificarLogin(){
   const e = localStorage.getItem("empresa");
   if(e){
@@ -145,7 +145,7 @@ async function login(){
   }
 }
 
-// Carrega agenda da empresa
+// Carrega agenda da empresa logada
 async function carregarAgenda(){
   const lista = document.getElementById("agenda");
   lista.innerHTML="<p>Carregando...</p>";
