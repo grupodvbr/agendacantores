@@ -91,8 +91,10 @@
       width:min(92vw, 380px);
       background:#101326; color:#fff;
       border-radius:16px; padding:18px;
+      position:relative;
     }
-    .modal-box h3{ margin:0 0 10px; font-size:18px; }
+    .modal-box h3{ margin:0 0 10px; font-size:18px; display:flex; justify-content:space-between; align-items:center; }
+    .modal-box h3 span{ cursor:pointer; }
     .kv{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed rgba(255,255,255,.15); }
     .kv:last-child{ border-bottom:none; }
     .kv b{ color:var(--amarelo); }
@@ -131,7 +133,7 @@
   <!-- Modal detalhes -->
   <div id="modal">
     <div class="modal-box">
-      <h3>Detalhes do Evento</h3>
+      <h3>Detalhes do Evento <span id="editBtn">✏️</span></h3>
       <div class="kv"><span>Data</span><b id="m_data"></b></div>
       <div class="kv"><span>Cantor</span><b id="m_cantor"></b></div>
       <div class="kv"><span>Horário</span><b id="m_hora"></b></div>
@@ -140,10 +142,10 @@
     </div>
   </div>
 
-  <!-- Modal adicionar -->
+  <!-- Modal adicionar/editar -->
   <div id="formModal">
     <div class="modal-box">
-      <h3>Novo Registro</h3>
+      <h3 id="formTitle">Novo Registro</h3>
       <label>Data</label>
       <input type="date" id="f_data" />
       <label>Cantor</label>
@@ -151,7 +153,6 @@
       <label>Horário</label>
       <input type="time" id="f_hora" />
       <label>Valor</label>
-      <!-- teclado numérico e vírgula/ponto -->
       <input type="text" id="f_valor" inputmode="decimal" placeholder="0,00" />
       <button class="btn" onclick="salvarRegistro()">Salvar</button>
       <button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button>
@@ -176,6 +177,7 @@
     const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec";
     const SENHAS = { "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
     let EMPRESA = null;
+    let EDITANDO = null;
 
     // ---------- LOGIN ----------
     function verificarLogin(){
@@ -202,144 +204,101 @@
 
     // ---------- HELPERS ----------
     const pad = n => n.toString().padStart(2,'0');
-
-    // pega HH:MM de qualquer formato comum (inclui 1899-12-30T19:02 etc.)
     function parseHoraToHM(raw){
       if(raw == null) return {hh:0, mm:0};
       const s = String(raw).trim();
-
-      // ISO ou texto com T19:02
       let m = s.match(/T(\d{2}):(\d{2})/);
-      if(m) return {hh: +m[1], mm: +m[2]};
-
-      // HH:MM em qualquer lugar
+      if(m) return {hh:+m[1], mm:+m[2]};
       m = s.match(/(\d{1,2}):(\d{2})/);
-      if(m) return {hh: Math.min(23,+m[1]), mm: Math.min(59,+m[2])};
-
-      // número fracionário (excel time)
-      const num = Number(s.replace(',','.'));
-      if(Number.isFinite(num)){
-        if(num > 1){ // serial date -> pega só a fração
-          const frac = num - Math.floor(num);
-          const total = Math.round(frac * 1440);
-          return {hh: Math.floor(total/60), mm: total%60};
-        }else if(num >= 0){
-          const total = Math.round(num * 1440);
-          return {hh: Math.floor(total/60), mm: total%60};
-        }
-      }
+      if(m) return {hh:Math.min(23,+m[1]), mm:Math.min(59,+m[2])};
       return {hh:0, mm:0};
     }
-    const formatHora = raw => {
-      const {hh, mm} = parseHoraToHM(raw);
-      return `${pad(hh)}:${pad(mm)}`;
-    };
+    const formatHora = raw => { const {hh,mm}=parseHoraToHM(raw); return `${pad(hh)}:${pad(mm)}`; }
     const formatValor = v => Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
     // ---------- RENDER ----------
     async function carregarAgenda(inicio=null, fim=null){
       const box = document.getElementById('lista');
       box.innerHTML = "Carregando...";
-
       const res = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
       let eventos = await res.json();
 
-      // Filtro por período
-      if(inicio && fim){
-        const de = new Date(inicio), ate = new Date(fim);
-        eventos = eventos.filter(ev => {
-          const d = new Date(ev.data);
-          // normaliza só a data
-          return d >= de && d <= ate;
-        });
-      }
-
-      // Agrupar por DIA (yyyy-mm-dd)
-      const grupos = {};
+      const grupos={};
       for(const ev of eventos){
         const d = new Date(ev.data);
         const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-        if(!grupos[key]) grupos[key] = [];
+        if(!grupos[key]) grupos[key]=[];
         const hm = parseHoraToHM(ev.hora);
-        grupos[key].push({...ev, _hh: hm.hh, _mm: hm.mm});
+        grupos[key].push({...ev,_hh:hm.hh,_mm:hm.mm});
       }
 
-      box.innerHTML = "";
-      const dias = Object.keys(grupos).sort(); // por data
-
-      if(!dias.length){
-        box.innerHTML = "<p style='opacity:.85'>Sem eventos no período.</p>";
-        return;
-      }
-
-      for(const k of dias){
-        const d = new Date(k);
-        const dia = pad(d.getDate());
-        const mes = d.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
-
-        // Ordena por hora dentro do dia
-        grupos[k].sort((a,b)=> (a._hh*60+a._mm) - (b._hh*60+b._mm));
-
-        const itens = grupos[k].map(ev => `
-          <div class="linha" onclick="abrirModal('${k}','${ev.cantor.replace(/'/g,"\\'")}','${formatHora(ev.hora)}','${ev.valor}')">
+      box.innerHTML="";
+      for(const k of Object.keys(grupos).sort()){
+        const d=new Date(k);
+        const dia=pad(d.getDate()), mes=d.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
+        grupos[k].sort((a,b)=> (a._hh*60+a._mm)-(b._hh*60+b._mm));
+        const itens=grupos[k].map(ev=>`
+          <div class="linha" onclick="abrirModal('${k}','${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')">
             <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
-          </div>
-        `).join("");
-
-        box.innerHTML += `
-          <section class="grupo">
-            <div class="dia">${dia}<small>${mes}</small></div>
-            <div class="itens">${itens}</div>
-          </section>
-        `;
+          </div>`).join("");
+        box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
       }
     }
 
     // ---------- MODAIS ----------
     function abrirModal(dataISO,cantor,hora,valor){
-      const d = new Date(dataISO);
-      const dataLegivel = d.toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'short', year:'numeric'});
-      document.getElementById('m_data').textContent = dataLegivel;
-      document.getElementById('m_cantor').textContent = cantor;
-      document.getElementById('m_hora').textContent = hora;
-      document.getElementById('m_valor').textContent = formatValor(valor);
-      document.getElementById('modal').style.display = "flex";
+      const d=new Date(dataISO);
+      document.getElementById('m_data').textContent=d.toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+      document.getElementById('m_cantor').textContent=cantor;
+      document.getElementById('m_hora').textContent=hora;
+      document.getElementById('m_valor').textContent=formatValor(valor);
+      EDITANDO={data:dataISO,cantor,hora,valor};
+      document.getElementById('modal').style.display="flex";
     }
-    function fecharModal(){ document.getElementById('modal').style.display = "none"; }
+    function fecharModal(){ document.getElementById('modal').style.display="none"; }
 
-    // Form novo registro
-    document.getElementById('addBtn').onclick = () => {
-      document.getElementById('f_data').value = "";
-      document.getElementById('f_cantor').value = "";
-      document.getElementById('f_hora').value = "";
-      document.getElementById('f_valor').value = "";
-      document.getElementById('formModal').style.display = "flex";
+    // Editar
+    document.getElementById('editBtn').onclick=()=>{
+      if(EDITANDO){
+        document.getElementById('formTitle').textContent="Editar Registro";
+        document.getElementById('f_data').value=EDITANDO.data;
+        document.getElementById('f_cantor').value=EDITANDO.cantor;
+        document.getElementById('f_hora').value=formatHora(EDITANDO.hora);
+        document.getElementById('f_valor').value=EDITANDO.valor;
+        fecharModal();
+        document.getElementById('formModal').style.display="flex";
+      }
     };
-    function fecharForm(){ document.getElementById('formModal').style.display = "none"; }
+
+    // Novo registro
+    document.getElementById('addBtn').onclick=()=>{
+      EDITANDO=null;
+      document.getElementById('formTitle').textContent="Novo Registro";
+      document.getElementById('f_data').value="";
+      document.getElementById('f_cantor').value="";
+      document.getElementById('f_hora').value="";
+      document.getElementById('f_valor').value="";
+      document.getElementById('formModal').style.display="flex";
+    };
+    function fecharForm(){ document.getElementById('formModal').style.display="none"; }
 
     async function salvarRegistro(){
-      const data = document.getElementById('f_data').value;
-      const cantor = document.getElementById('f_cantor').value;
-      const hora = document.getElementById('f_hora').value;
-      let valor = document.getElementById('f_valor').value.replace(',', '.');
-      valor = parseFloat(valor) || 0;
+      const data=document.getElementById('f_data').value;
+      const cantor=document.getElementById('f_cantor').value;
+      const hora=document.getElementById('f_hora').value;
+      let valor=document.getElementById('f_valor').value.replace(',','.');
+      valor=parseFloat(valor)||0;
 
-      await fetch(API_URL, {
-        method: "POST",
-        body: JSON.stringify({ empresa: EMPRESA, data, cantor, hora, valor })
-      });
+      const payload={empresa:EMPRESA,data,cantor,hora,valor};
+      if(EDITANDO) payload.edit=true;
 
+      await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});
       fecharForm();
       carregarAgenda();
     }
 
-    // Calendário (filtro)
-    flatpickr("#calendarBtn", {
-      mode: "range",
-      dateFormat: "Y-m-d",
-      onClose: (dates) => { if (dates.length === 2) carregarAgenda(dates[0], dates[1]); }
-    });
-
+    // Calendário
+    flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(d)=>{if(d.length===2)carregarAgenda(d[0],d[1]);}});
     verificarLogin();
   </script>
 </body>
