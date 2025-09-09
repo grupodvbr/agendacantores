@@ -5,10 +5,7 @@
   <title>Agenda de Músicos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-  <!-- Logo -->
   <link rel="icon" type="image/png" href="logo.png" />
-
-  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Great+Vibes&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
@@ -22,47 +19,23 @@
       --line:rgba(255,255,255,.18);
     }
     html,body{ height:100%; margin:0; overflow:hidden; }
-    body{
-      font-family:'Poppins',sans-serif;
-      color:var(--texto);
-    }
+    body{ font-family:'Poppins',sans-serif; color:var(--texto); }
 
     /* Fundo fixo */
     .bg{
-      position:fixed;
-      inset:0;
-      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Captura%20de%20tela%202025-09-09%20163930.png?raw=true')
+      position:fixed; inset:0;
+      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Design%20sem%20nome%20(24).png?raw=true')
         no-repeat bottom center/cover;
       z-index:-2;
     }
-    .stars{
-      position:fixed;
-      inset:0;
-      overflow:hidden;
-      z-index:-1;
-      pointer-events:none;
-    }
-    .star{
-      position:absolute;
-      width:2px; height:2px;
-      background:rgba(255,255,255,.6);
-      border-radius:50%;
-      animation:fall linear infinite;
-    }
-    @keyframes fall{
-      from{ transform:translateY(-10px); opacity:.7;}
-      to{ transform:translateY(100vh); opacity:0;}
-    }
+
+    /* Estrelas */
+    .stars{ position:fixed; inset:0; overflow:hidden; z-index:-1; pointer-events:none; }
+    .star{ position:absolute; width:2px; height:2px; background:rgba(255,255,255,.6); border-radius:50%; animation:fall linear infinite; }
+    @keyframes fall{ from{ transform:translateY(-10px); opacity:.7;} to{ transform:translateY(100vh); opacity:0;} }
 
     /* Conteúdo rolável */
-    .overlay{
-      height:100%;
-      width:100%;
-      background:var(--overlay);
-      display:flex; flex-direction:column; align-items:center;
-      padding:18px 16px 80px;
-      overflow-y:auto;
-    }
+    .overlay{ height:100%; width:100%; background:var(--overlay); display:flex; flex-direction:column; align-items:center; padding:18px 16px 80px; overflow-y:auto; overflow-x:hidden; }
 
     /* Cabeçalho */
     .titulo{ width:100%; max-width:820px; position:relative; text-align:center; }
@@ -73,18 +46,21 @@
     #calendarBtn{ min-width:38px; }
 
     /* Lista */
-    .lista{ width:100%; max-width:820px; margin-top:18px; display:flex; flex-direction:column; gap:14px; }
-    .grupo{ display:grid; grid-template-columns:92px 1fr; gap:14px; }
+    .lista{ width:100%; max-width:820px; margin-top:18px; display:flex; flex-direction:column; gap:14px; overflow-x:hidden; }
+    .grupo{ display:grid; grid-template-columns:92px 1fr; gap:14px; max-width:100%; }
     .dia{ display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:34px; color:#fff; }
     .dia small{ color:var(--amarelo); font-size:12px; font-weight:800; }
-    .itens{ border-left:4px solid var(--amarelo); padding-left:14px; display:flex; flex-direction:column; gap:10px; }
-    .linha{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; display:flex; justify-content:space-between; cursor:pointer; }
+    .itens{ border-left:4px solid var(--amarelo); padding-left:14px; display:flex; flex-direction:column; gap:10px; max-width:100%; }
+    .linha{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; display:flex; justify-content:space-between; cursor:pointer; max-width:100%; box-sizing:border-box; }
     .linha:hover{ background:rgba(255,215,0,.08); }
-    .linha .texto{ font-weight:700; }
+    .linha .texto{ font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .linha .hora{ color:var(--muted); font-weight:700; margin-left:10px; }
 
-    /* Botão + */
-    #addBtn{ position:fixed; bottom:20px; left:20px; width:48px; height:48px; border-radius:50%; border:none; cursor:pointer; background:var(--amarelo); color:#000; font-size:26px; font-weight:900; box-shadow:0 6px 18px rgba(0,0,0,.4); }
+    /* Botão + (texto simples) */
+    #addBtn{ position:fixed; bottom:20px; left:20px; border:none; background:none; font-size:40px; font-weight:900; color:var(--amarelo); cursor:pointer; z-index:1500; }
+
+    /* Flatpickr não sair da tela */
+    .flatpickr-calendar{ max-width:90vw !important; }
 
     /* Modais */
     #modal,#formModal,#loginModal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:1000; }
@@ -142,47 +118,9 @@
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
-    const API_URL="https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec";
-    const SENHAS={"1234":"Mercatto Delícia","5678":"Villa Gourmet","9999":"Delícia Gourmet"};
-    let EMPRESA=null,EDITANDO=null,filtroDe=null,filtroAte=null;
-
-    function mostrarLoader(){document.getElementById('loader').style.display="flex";}
-    function esconderLoader(){document.getElementById('loader').style.display="none";}
-
-    function verificarLogin(){const e=localStorage.getItem("empresa");if(e){EMPRESA=e;document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";carregarAgenda();}}
-    function login(){const s=document.getElementById('senha').value.trim();if(SENHAS[s]){EMPRESA=SENHAS[s];localStorage.setItem("empresa",EMPRESA);document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";carregarAgenda();}else{document.getElementById('loginMsg').textContent="Senha incorreta.";}}
-
-    const pad=n=>n.toString().padStart(2,'0');
-    function toDateOnlyKey(input){if(input instanceof Date)return `${input.getFullYear()}-${pad(input.getMonth()+1)}-${pad(input.getDate())}`;const d=new Date(input);if(!isNaN(d))return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;return "";}
-    function parseHoraToHM(raw){const s=String(raw||"").trim();let m=s.match(/(\d{1,2}):(\d{2})/);if(m)return{hh:+m[1],mm:+m[2]};return{hh:0,mm:0};}
-    const formatHora=raw=>{const {hh,mm}=parseHoraToHM(raw);return `${pad(hh)}:${pad(mm)}`;}
-    const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
-
-    async function carregarAgenda(){mostrarLoader();const box=document.getElementById('lista');box.innerHTML="";const res=await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);let eventos=await res.json();if(filtroDe&&filtroAte){const fromKey=toDateOnlyKey(filtroDe),toKey=toDateOnlyKey(filtroAte);eventos=eventos.filter(ev=>{const k=toDateOnlyKey(ev.data);return k&&k>=fromKey&&k<=toKey;});}const grupos={};for(const ev of eventos){const k=toDateOnlyKey(ev.data);if(!k)continue;const {hh,mm}=parseHoraToHM(ev.hora);(grupos[k] ||= []).push({...ev,_hh:hh,_mm:mm});}const dias=Object.keys(grupos).sort();if(!dias.length){box.innerHTML="<p style='opacity:.85'>Sem eventos no período selecionado.</p>";esconderLoader();return;}for(const k of dias){const [y,m,d]=k.split('-').map(Number);const dia=pad(d);const mes=new Date(y,m-1,d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();grupos[k].sort((a,b)=>(a._hh*60+a._mm)-(b._hh*60+b._mm));const itens=grupos[k].map(ev=>`<div class="linha" onclick="abrirModal('${k}','${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')"><div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div></div>`).join("");box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;}esconderLoader();}
-
-    function abrirModal(data,cantor,hora,valor){const [y,m,d]=data.split('-').map(Number);document.getElementById('m_data').textContent=new Date(y,m-1,d).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short',year:'numeric'});document.getElementById('m_cantor').textContent=cantor;document.getElementById('m_hora').textContent=hora;document.getElementById('m_valor').textContent=formatValor(valor);EDITANDO={data,cantor,hora,valor};document.getElementById('modal').style.display="flex";}
-    function fecharModal(){document.getElementById('modal').style.display="none";}
-
-    document.getElementById('editBtn').onclick=()=>{if(EDITANDO){document.getElementById('formTitle').textContent="Editar Registro";document.getElementById('f_data').value=EDITANDO.data;document.getElementById('f_cantor').value=EDITANDO.cantor;document.getElementById('f_hora').value=formatHora(EDITANDO.hora);document.getElementById('f_valor').value=EDITANDO.valor;fecharModal();document.getElementById('formModal').style.display="flex";}};
-    document.getElementById('addBtn').onclick=()=>{EDITANDO=null;document.getElementById('formTitle').textContent="Novo Registro";document.getElementById('f_data').value="";document.getElementById('f_cantor').value="";document.getElementById('f_hora').value="";document.getElementById('f_valor').value="";document.getElementById('formModal').style.display="flex";};
-    function fecharForm(){document.getElementById('formModal').style.display="none";}
-
-    async function salvarRegistro(){mostrarLoader();const data=document.getElementById('f_data').value,cantor=document.getElementById('f_cantor').value,hora=document.getElementById('f_hora').value;let valor=document.getElementById('f_valor').value.replace(',','.');valor=parseFloat(valor)||0;const payload={empresa:EMPRESA,data,cantor,hora,valor};if(EDITANDO)payload.edit=true;await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});fecharForm();carregarAgenda();}
-
-    flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(dates)=>{if(dates.length===2){filtroDe=dates[0];filtroAte=dates[1];}else{filtroDe=filtroAte=null;}carregarAgenda();}});
-
-    verificarLogin();
-
-    // Criar estrelas
+    // estrelas
     const stars=document.getElementById('stars');
-    for(let i=0;i<60;i++){
-      const s=document.createElement('div');
-      s.className='star';
-      s.style.left=Math.random()*100+'vw';
-      s.style.animationDuration=2+Math.random()*4+'s';
-      s.style.animationDelay=Math.random()*5+'s';
-      stars.appendChild(s);
-    }
+    for(let i=0;i<60;i++){const s=document.createElement('div');s.className='star';s.style.left=Math.random()*100+'vw';s.style.animationDuration=2+Math.random()*4+'s';s.style.animationDelay=Math.random()*5+'s';stars.appendChild(s);}
   </script>
 </body>
 </html>
