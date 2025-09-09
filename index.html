@@ -46,7 +46,6 @@
       color:#fff;
     }
     .top-actions{ position:absolute; top:0; right:0; }
-
     .btn{
       border:none; border-radius:10px; cursor:pointer;
       background:var(--amarelo); color:#0a0a0a;
@@ -63,7 +62,6 @@
       font-size:34px; color:#fff;
     }
     .dia small{ color:var(--amarelo); font-size:12px; font-weight:800; }
-
     .itens{ border-left:4px solid var(--amarelo); padding-left:14px; display:flex; flex-direction:column; gap:10px; }
     .linha{
       background:var(--card); border:1px solid var(--line);
@@ -72,15 +70,15 @@
     }
     .linha:hover{ background:rgba(255,215,0,0.08); }
     .linha .texto{ font-weight:700; color:#fff; }
-    .linha .hora{ color:var(--muted); font-weight:700; }
+    .linha .hora{ color:var(--muted); font-weight:700; margin-left:10px; }
 
-    /* FAB (+) centralizado */
+    /* Botão ➕ canto inferior esquerdo */
     #addBtn{
-      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
-      width:64px; height:64px;
+      position:fixed; bottom:20px; left:20px;
+      width:48px; height:48px;
       border-radius:50%; border:none; cursor:pointer;
       background:var(--amarelo); color:#000;
-      font-size:34px; font-weight:900;
+      font-size:26px; font-weight:900;
       box-shadow:0 6px 18px rgba(0,0,0,.4);
     }
 
@@ -210,7 +208,7 @@
         const d=new Date(k); const dia=pad(d.getDate()); const mes=d.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
         const itens=grupos[k].map(ev=>`
           <div class="linha" onclick="abrirModal('${ev.data}','${ev.cantor}','${ev.hora}','${ev.valor}')">
-            <div class="texto">${ev.cantor}</div><div class="hora">${formatHora(ev.hora)}</div>
+            <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
           </div>`).join("");
         box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
       }
