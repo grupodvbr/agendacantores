@@ -4,6 +4,7 @@
   <meta charset="UTF-8">
   <title>Agenda de Músicos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
   <style>
     body {
       margin:0;
@@ -41,25 +42,29 @@
     #editBtn {
       position:absolute;
       top:0;
-      right:10px;
+      right:50px;
       font-size:20px;
       cursor:pointer;
       color:#ffd700;
     }
-    /* Filtro datas */
-    .filtro {
-      margin:10px 0 30px;
+    /* Calendário no canto */
+    #calendarFilter {
+      position:absolute;
+      top:0;
+      right:10px;
       font-size:14px;
-      color:#ddd;
-    }
-    .filtro input {
-      padding:5px;
-      border-radius:6px;
+      padding:6px 10px;
       border:none;
+      border-radius:6px;
+      cursor:pointer;
+      background:#ffd700;
+      color:#000;
+      font-weight:600;
     }
     .lista {
       max-width:500px;
       width:100%;
+      margin-top:30px;
     }
     .evento {
       display:flex;
@@ -88,6 +93,8 @@
       margin:0;
       font-size:18px;
       font-weight:700;
+      display:flex;
+      justify-content:space-between;
     }
     .detalhes p {
       margin:2px 0;
@@ -115,22 +122,6 @@
       background:#ffd700; font-weight:bold; cursor:pointer;
       margin-top:6px;
     }
-    /* Painel admin */
-    #adminPanel {
-      position:fixed; inset:0;
-      background:rgba(0,0,0,.85);
-      display:none; align-items:center; justify-content:center;
-      z-index:2000;
-    }
-    #adminBox {
-      background:#fff; color:#000; padding:20px;
-      border-radius:12px; width:90%; max-width:600px;
-      max-height:80vh; overflow:auto;
-    }
-    #adminBox h2 { margin-top:0 }
-    table { width:100%; border-collapse:collapse; font-size:14px; }
-    th, td { border:1px solid #ccc; padding:6px; text-align:left; }
-    .actions button { margin-right:4px; }
   </style>
 </head>
 <body>
@@ -139,29 +130,10 @@
       <h1>Músicos da Semana</h1>
       <h2 id="empresaNome"></h2>
       <span id="editBtn" title="Gerenciar">✏️</span>
-    </div>
-
-    <div class="filtro">
-      <label>De: <input type="date" id="dataDe"></label>
-      <label>Até: <input type="date" id="dataAte"></label>
-      <button onclick="filtrarAgenda()">Filtrar</button>
+      <button id="calendarFilter">Selecionar</button>
     </div>
 
     <div class="lista" id="agenda"></div>
-  </div>
-
-  <!-- Painel Admin -->
-  <div id="adminPanel">
-    <div id="adminBox">
-      <h2>Gerenciar Agenda</h2>
-      <table id="tabelaAdmin">
-        <thead>
-          <tr><th>Data</th><th>Hora</th><th>Cantor</th><th>Valor</th><th>Ações</th></tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-      <button onclick="fecharAdmin()">Fechar</button>
-    </div>
   </div>
 
   <!-- Login -->
@@ -175,11 +147,13 @@
     </div>
   </div>
 
+<script src="https://cdn.venngage.com/template/thumbnail/small/16d941ee-2e8e-49ac-889c-208297e1daad.webp"></script>
 <script>
+// URL do Apps Script
 const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec"; 
 let empresa = null;
 
-// Senhas fixas no front
+// Senhas fixas
 const SENHAS = {
   "1234": "Mercatto Delícia",
   "5678": "Villa Gourmet",
@@ -235,71 +209,24 @@ async function carregarAgenda(filtroDe=null, filtroAte=null){
       <div class="evento">
         <div class="data">${dia}<span>${mes.toUpperCase()}</span></div>
         <div class="detalhes">
-          <h3>${ev.cantor}</h3>
-          <p>${ev.hora} - R$ ${ev.valor}</p>
+          <h3>${ev.cantor} <span>R$ ${ev.valor}</span></h3>
+          <p>${ev.hora}</p>
         </div>
       </div>`;
   });
 }
-function filtrarAgenda(){
-  const de = document.getElementById("dataDe").value;
-  const ate = document.getElementById("dataAte").value;
-  if(de && ate) carregarAgenda(de, ate);
-}
 
-// ===== ADMIN =====
-document.getElementById("editBtn").addEventListener("click", abrirAdmin);
-
-async function abrirAdmin(){
-  const res = await fetch(API_URL+"?empresa="+encodeURIComponent(empresa));
-  const eventos = await res.json();
-  const tbody = document.querySelector("#tabelaAdmin tbody");
-  tbody.innerHTML="";
-  eventos.forEach(ev=>{
-    tbody.innerHTML += `
-      <tr>
-        <td><input type="date" value="${ev.data}" data-row="${ev.row}" data-field="data"></td>
-        <td><input type="time" value="${ev.hora}" data-row="${ev.row}" data-field="hora"></td>
-        <td><input type="text" value="${ev.cantor}" data-row="${ev.row}" data-field="cantor"></td>
-        <td><input type="number" value="${ev.valor}" data-row="${ev.row}" data-field="valor"></td>
-        <td class="actions">
-          <button onclick="salvar(${ev.row})">💾</button>
-          <button onclick="excluir(${ev.row})">🗑️</button>
-        </td>
-      </tr>`;
-  });
-  document.getElementById("adminPanel").style.display="flex";
-}
-function fecharAdmin(){
-  document.getElementById("adminPanel").style.display="none";
-  carregarAgenda();
-}
-
-// Atualizar evento
-async function salvar(row){
-  const inputs = document.querySelectorAll(`[data-row='${row}']`);
-  const body = {row: row, empresa: empresa};
-  inputs.forEach(inp=> body[inp.dataset.field] = inp.value);
-
-  await fetch(API_URL, {
-    method: "PUT",
-    body: JSON.stringify(body),
-    headers: {"Content-Type":"application/json"}
-  });
-  alert("Atualizado!");
-}
-
-// Excluir evento
-async function excluir(row){
-  if(!confirm("Deseja excluir este evento?")) return;
-  await fetch(API_URL, {
-    method: "DELETE",
-    body: JSON.stringify({row: row}),
-    headers: {"Content-Type":"application/json"}
-  });
-  alert("Excluído!");
-  abrirAdmin();
-}
+// ===== CALENDÁRIO =====
+flatpickr("#calendarFilter", {
+  mode: "range",
+  dateFormat: "Y-m-d",
+  locale: "pt",
+  onClose: function(selectedDates){
+    if(selectedDates.length === 2){
+      carregarAgenda(selectedDates[0], selectedDates[1]);
+    }
+  }
+});
 
 verificarLogin();
 </script>
