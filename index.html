@@ -16,7 +16,6 @@
   <style>
     :root{
       --amarelo:#ffd700;
-      --overlay:rgba(10,0,30,.78);
       --texto:#fff;
       --muted:#d8d8d8;
       --card:rgba(255,255,255,.06);
@@ -24,13 +23,18 @@
     }
     body{
       margin:0;
-      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Design%20sem%20nome%20(24).png?raw=true') no-repeat center center/cover;
+      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Design%20sem%20nome%20(24).png?raw=true') 
+        no-repeat center center fixed;
+      background-size:cover;
       color:var(--texto);
       font-family:'Poppins',sans-serif;
     }
     .overlay{
-      min-height:100vh; background:var(--overlay);
-      padding:18px 16px 80px; display:flex; flex-direction:column; align-items:center;
+      min-height:100vh;
+      padding:18px 16px 80px; 
+      display:flex; 
+      flex-direction:column; 
+      align-items:center;
     }
 
     /* Cabeçalho */
@@ -57,7 +61,11 @@
     #calendarBtn{ min-width:38px; }
 
     /* Lista */
-    .lista{ width:100%; max-width:820px; margin-top:18px; display:flex; flex-direction:column; gap:14px; }
+    .lista{ 
+      width:100%; max-width:820px; margin-top:18px; 
+      display:flex; flex-direction:column; gap:14px; 
+      overflow-y:auto; max-height:70vh; padding-right:6px;
+    }
     .grupo{ display:grid; grid-template-columns:92px 1fr; gap:14px; }
     .dia{
       display:flex; flex-direction:column; align-items:center; justify-content:center;
