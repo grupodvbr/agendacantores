@@ -5,8 +5,12 @@
   <title>Agenda de Músicos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
+  <!-- Logo no navegador -->
   <link rel="icon" type="image/png" href="logo.png" />
+
+  <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Great+Vibes&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+  <!-- Flatpickr -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
   <style>
@@ -18,78 +22,85 @@
       --card:rgba(255,255,255,.06);
       --line:rgba(255,255,255,.18);
     }
-    html,body{ height:100%; margin:0; overflow:hidden; }
-    body{ font-family:'Poppins',sans-serif; color:var(--texto); }
+    html,body{height:100%; margin:0; overflow:hidden; font-family:'Poppins',sans-serif; color:var(--texto);}
 
     /* Fundo fixo */
     .bg{
       position:fixed; inset:0;
-      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Captura%20de%20tela%202025-09-09%20163930.png?raw=true')
+      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Design%20sem%20nome%20(24).png?raw=true')
         no-repeat bottom center/cover;
       z-index:-2;
     }
 
-    /* Estrelas */
-    .stars{ position:fixed; inset:0; overflow:hidden; z-index:-1; pointer-events:none; }
-    .star{ position:absolute; width:2px; height:2px; background:rgba(255,255,255,.6); border-radius:50%; animation:fall linear infinite; }
-    @keyframes fall{ from{ transform:translateY(-10px); opacity:.7;} to{ transform:translateY(100vh); opacity:0;} }
+    /* Estrelas caindo */
+    .stars{position:fixed; inset:0; z-index:-1; pointer-events:none; overflow:hidden;}
+    .star{position:absolute; width:2px; height:2px; background:rgba(255,255,255,.4); border-radius:50%; animation:fall linear infinite;}
+    @keyframes fall{from{transform:translateY(-10px); opacity:.5;} to{transform:translateY(100vh); opacity:0;}}
 
-    /* Conteúdo rolável */
-    .overlay{ height:100%; width:100%; background:var(--overlay); display:flex; flex-direction:column; align-items:center; padding:18px 16px 80px; overflow-y:auto; overflow-x:hidden; }
+    /* Overlay (rolagem apenas aqui) */
+    .overlay{
+      height:100%; width:100%;
+      background:var(--overlay);
+      display:flex; flex-direction:column; align-items:center;
+      padding:18px 16px 80px;
+      overflow-y:auto; overflow-x:hidden;
+      box-sizing:border-box;
+    }
 
     /* Cabeçalho */
-    .titulo{ width:100%; max-width:820px; position:relative; text-align:center; }
-    .title{ margin:0; font-family:'Bebas Neue',sans-serif; font-size:44px; color:var(--amarelo); text-shadow:0 2px 0 rgba(0,0,0,.25); }
-    .subtitle{ margin:8px 0 0; font-family:'Great Vibes',cursive; font-size:30px; color:#fff; }
-    .top-actions{ position:absolute; top:0; right:0; }
-    .btn{ border:none; border-radius:10px; cursor:pointer; background:var(--amarelo); color:#0a0a0a; font-weight:800; padding:8px 10px; }
-    #calendarBtn{ min-width:38px; }
+    .titulo{width:100%; max-width:820px; position:relative; text-align:center;}
+    .title{margin:0; font-family:'Bebas Neue',sans-serif; font-size:44px; color:var(--amarelo); text-shadow:0 2px 0 rgba(0,0,0,.25);}
+    .subtitle{margin:8px 0 0; font-family:'Great Vibes',cursive; font-size:30px; color:#fff;}
+    .top-actions{position:absolute; top:0; right:0;}
+    .btn{border:none; border-radius:10px; cursor:pointer; background:var(--amarelo); color:#0a0a0a; font-weight:800; padding:8px 10px;}
+    #calendarBtn{min-width:38px;}
 
     /* Lista */
-    .lista{ width:100%; max-width:820px; margin-top:18px; display:flex; flex-direction:column; gap:14px; overflow-x:hidden; }
-    .grupo{ display:grid; grid-template-columns:92px 1fr; gap:14px; max-width:100%; }
-    .dia{ display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:34px; color:#fff; }
-    .dia small{ color:var(--amarelo); font-size:12px; font-weight:800; }
-    .itens{ border-left:4px solid var(--amarelo); padding-left:14px; display:flex; flex-direction:column; gap:10px; max-width:100%; }
-    .linha{ background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; display:flex; justify-content:space-between; cursor:pointer; max-width:100%; box-sizing:border-box; }
-    .linha:hover{ background:rgba(255,215,0,.08); }
-    .linha .texto{ font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-    .linha .hora{ color:var(--muted); font-weight:700; margin-left:10px; }
+    .lista{width:100%; max-width:820px; margin-top:18px; display:flex; flex-direction:column; gap:14px; overflow-x:hidden;}
+    .grupo{display:grid; grid-template-columns:92px 1fr; gap:14px; max-width:100%;}
+    .dia{display:flex; flex-direction:column; align-items:center; justify-content:center; font-family:'Bebas Neue',sans-serif; font-size:34px; color:#fff;}
+    .dia small{color:var(--amarelo); font-size:12px; font-weight:800;}
+    .itens{border-left:4px solid var(--amarelo); padding-left:14px; display:flex; flex-direction:column; gap:10px; max-width:100%;}
+    .linha{background:var(--card); border:1px solid var(--line); border-radius:14px; padding:10px 12px; display:flex; justify-content:space-between; cursor:pointer; max-width:100%; box-sizing:border-box;}
+    .linha:hover{background:rgba(255,215,0,.08);}
+    .linha .texto{font-weight:700; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;}
+    .linha .hora{color:var(--muted); font-weight:700; margin-left:10px;}
 
-    /* Botão + (texto simples) */
-    #addBtn{ position:fixed; bottom:20px; left:20px; border:none; background:none; font-size:40px; font-weight:900; color:var(--amarelo); cursor:pointer; z-index:1500; }
+    /* Botão + simples */
+    #addBtn{position:fixed; bottom:20px; left:20px; border:none; background:none; font-size:40px; font-weight:900; color:var(--amarelo); cursor:pointer; z-index:1500;}
 
-    /* Flatpickr não sair da tela */
-    .flatpickr-calendar{ max-width:90vw !important; }
+    /* Calendário respeitando tela */
+    .flatpickr-calendar{max-width:90vw !important;}
 
     /* Modais */
-    #modal,#formModal,#loginModal{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:1000; }
-    .modal-box{ width:min(92vw,380px); background:#101326; color:#fff; border-radius:16px; padding:18px; position:relative; }
-    .modal-box h3{ margin:0 0 10px; font-size:18px; display:flex; justify-content:space-between; align-items:center; }
-    .modal-box h3 span{ cursor:pointer; }
-    .kv{ display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed rgba(255,255,255,.15); }
-    .kv:last-child{ border-bottom:none; }
-    .kv b{ color:var(--amarelo); }
-    .close{ margin-top:12px; width:100%; }
+    #modal,#formModal,#loginModal{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:1000;}
+    .modal-box{width:min(92vw,380px); background:#101326; color:#fff; border-radius:16px; padding:18px; position:relative;}
+    .modal-box h3{margin:0 0 10px; font-size:18px; display:flex; justify-content:space-between; align-items:center;}
+    .modal-box h3 span{cursor:pointer;}
+    .kv{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px dashed rgba(255,255,255,.15);}
+    .kv:last-child{border-bottom:none;}
+    .kv b{color:var(--amarelo);}
+    .close{margin-top:12px; width:100%;}
 
-    #formModal .modal-box{ background:#fff; color:#000; }
-    #formModal label{ display:block; margin-top:8px; font-size:14px; }
-    #formModal input{ width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; margin-top:4px; font-size:16px; }
-    #formModal input:focus{ outline:2px solid var(--amarelo); }
-    #formModal .btn{ margin-top:12px; width:100%; }
+    #formModal .modal-box{background:#fff; color:#000;}
+    #formModal label{display:block; margin-top:8px; font-size:14px;}
+    #formModal input{width:100%; padding:8px; border:1px solid #ccc; border-radius:6px; margin-top:4px; font-size:16px;}
+    #formModal input:focus{outline:2px solid var(--amarelo);}
+    #formModal .btn{margin-top:12px; width:100%;}
 
-    #loginModal{ background:rgba(0,0,0,.8); z-index:1500; }
-    #loginBox{ width:320px; background:#fff; color:#000; padding:20px; border-radius:12px; }
+    #loginModal{background:rgba(0,0,0,.8); z-index:1500;}
+    #loginBox{width:320px; background:#fff; color:#000; padding:20px; border-radius:12px;}
 
-    #loader{ position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:2000; }
-    .spinner{ width:60px; height:60px; border:6px solid rgba(255,255,255,0.2); border-top:6px solid var(--amarelo); border-radius:50%; animation:spin 1s linear infinite; }
-    @keyframes spin{ 100%{ transform:rotate(360deg);} }
+    /* Loader */
+    #loader{position:fixed; inset:0; display:none; align-items:center; justify-content:center; background:rgba(0,0,0,.6); z-index:2000;}
+    .spinner{width:60px; height:60px; border:6px solid rgba(255,255,255,0.2); border-top:6px solid var(--amarelo); border-radius:50%; animation:spin 1s linear infinite;}
+    @keyframes spin{100%{transform:rotate(360deg);}}
 
     @media(max-width:640px){
-      .title{ font-size:36px; }
-      .subtitle{ font-size:24px; }
-      .grupo{ grid-template-columns:70px 1fr; }
-      .dia{ font-size:26px; }
+      .title{font-size:36px;}
+      .subtitle{font-size:24px;}
+      .grupo{grid-template-columns:70px 1fr;}
+      .dia{font-size:26px;}
     }
   </style>
 </head>
@@ -106,21 +117,56 @@
     <main class="lista" id="lista"></main>
   </div>
 
-  <div id="modal"><div class="modal-box"><h3>Detalhes do Evento <span id="editBtn">✏️</span></h3><div class="kv"><span>Data</span><b id="m_data"></b></div><div class="kv"><span>Cantor</span><b id="m_cantor"></b></div><div class="kv"><span>Horário</span><b id="m_hora"></b></div><div class="kv"><span>Valor</span><b id="m_valor"></b></div><button class="btn close" onclick="fecharModal()">Fechar</button></div></div>
+  <!-- Modal detalhes -->
+  <div id="modal">
+    <div class="modal-box">
+      <h3>Detalhes do Evento <span id="editBtn">✏️</span></h3>
+      <div class="kv"><span>Data</span><b id="m_data"></b></div>
+      <div class="kv"><span>Cantor</span><b id="m_cantor"></b></div>
+      <div class="kv"><span>Horário</span><b id="m_hora"></b></div>
+      <div class="kv"><span>Valor</span><b id="m_valor"></b></div>
+      <button class="btn close" onclick="fecharModal()">Fechar</button>
+    </div>
+  </div>
 
-  <div id="formModal"><div class="modal-box"><h3 id="formTitle">Novo Registro</h3><label>Data</label><input type="date" id="f_data"/><label>Cantor</label><input type="text" id="f_cantor"/><label>Horário</label><input type="time" id="f_hora"/><label>Valor</label><input type="text" id="f_valor" inputmode="decimal" placeholder="0,00"/><button class="btn" onclick="salvarRegistro()">Salvar</button><button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button></div></div>
+  <!-- Modal adicionar/editar -->
+  <div id="formModal">
+    <div class="modal-box">
+      <h3 id="formTitle">Novo Registro</h3>
+      <label>Data</label>
+      <input type="date" id="f_data" />
+      <label>Cantor</label>
+      <input type="text" id="f_cantor" />
+      <label>Horário</label>
+      <input type="time" id="f_hora" />
+      <label>Valor</label>
+      <input type="text" id="f_valor" inputmode="decimal" placeholder="0,00" />
+      <button class="btn" onclick="salvarRegistro()">Salvar</button>
+      <button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button>
+    </div>
+  </div>
 
+  <!-- Botão + -->
   <button id="addBtn">+</button>
 
+  <!-- Login -->
   <div id="loginModal"><div id="loginBox"><h3>Login da Empresa</h3><input type="password" id="senha" placeholder="Digite a senha"/><button class="btn" onclick="login()">Entrar</button><div id="loginMsg" style="color:#ff4d4f;margin-top:6px;"></div></div></div>
 
+  <!-- Loader -->
   <div id="loader"><div class="spinner"></div></div>
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
-    // estrelas
+    // estrelas animadas
     const stars=document.getElementById('stars');
-    for(let i=0;i<60;i++){const s=document.createElement('div');s.className='star';s.style.left=Math.random()*100+'vw';s.style.animationDuration=2+Math.random()*4+'s';s.style.animationDelay=Math.random()*5+'s';stars.appendChild(s);}
+    for(let i=0;i<60;i++){
+      const s=document.createElement('div');
+      s.className='star';
+      s.style.left=Math.random()*100+'vw';
+      s.style.animationDuration=3+Math.random()*4+'s';
+      s.style.animationDelay=Math.random()*5+'s';
+      stars.appendChild(s);
+    }
   </script>
 </body>
 </html>
