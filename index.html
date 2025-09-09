@@ -4,265 +4,119 @@
   <meta charset="UTF-8" />
   <title>Agenda de Músicos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
-  <link rel="icon" type="image/png" href="logo.png" />
-  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Great+Vibes&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
-
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
   <style>
-    :root{
-      --amarelo:#ffd700;
-      --overlay:rgba(10,0,30,.82);
-      --texto:#fff; --muted:#d8d8d8;
-      --card:rgba(255,255,255,.06);
-      --line:rgba(255,255,255,.18);
-      --verde-claro:rgba(0,255,128,0.18);
-    }
-    html,body{height:100%;margin:0;}
-    body{
-      background:#0a0a18;
-      font-family:'Poppins',sans-serif;
-      color:var(--texto);
-    }
-
-    /* Estrelas */
-    #stars,#stars-front{position:fixed;top:0;left:0;width:100%;height:100%;overflow:hidden;pointer-events:none;z-index:0;}
-    .star{position:absolute;width:2px;height:2px;background:#fff;border-radius:50%;opacity:.9;
-      box-shadow:0 0 6px #fff,0 0 12px #ffd700;animation:fall linear infinite;}
-    @keyframes fall{0%{transform:translateY(-10vh);}100%{transform:translateY(110vh);} }
-
-    /* Header */
-    header.titulo{position:sticky;top:0;background:var(--overlay);padding:14px;display:flex;align-items:center;justify-content:space-between;z-index:50;}
-    header h1{margin:0;font-family:'Bebas Neue',sans-serif;font-size:30px;color:var(--amarelo);}
-    header h2{margin:0;font-family:'Great Vibes',cursive;font-size:22px;color:#fff;}
-    .top-actions{display:flex;gap:10px;align-items:center;}
-    .btn{border:none;border-radius:10px;cursor:pointer;background:var(--amarelo);
-      color:#0a0a0a;font-weight:700;padding:8px 12px;}
-
-    /* Conteúdo */
-    .content{padding:14px;max-width:900px;margin:0 auto;}
-    .lista{display:flex;flex-direction:column;gap:14px;}
-    .grupo{display:grid;grid-template-columns:70px 1fr;gap:14px;}
-    .dia{display:flex;flex-direction:column;align-items:center;justify-content:center;
-      font-family:'Bebas Neue',sans-serif;font-size:28px;color:#fff;}
-    .dia small{color:var(--amarelo);font-size:12px;font-weight:800;}
-    .itens{border-left:4px solid var(--amarelo);padding-left:14px;display:flex;flex-direction:column;gap:10px;}
-    .linha{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:10px;display:flex;justify-content:space-between;align-items:center;cursor:pointer;transition:.3s;}
-    .linha:hover{background:rgba(255,215,0,0.08);}
-    .linha .texto{font-weight:600;}
-    .linha .hora{color:var(--muted);margin-left:8px;}
-    .passado{background:var(--verde-claro)!important;}
-
+    body{margin:0;font-family:sans-serif;background:#0b0b15;color:#fff;}
+    header{padding:12px 18px;background:rgba(0,0,0,.6);display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:20}
+    h1{margin:0;font-size:20px;color:#ffd700;}
+    h2{margin:0;font-size:14px;font-weight:400;font-style:italic}
+    #calendarBtn{padding:8px 12px;border-radius:8px;border:none;cursor:pointer;font-weight:700;background:#ffd700;color:#000}
+    .content{padding:18px;max-width:800px;margin:0 auto}
+    .lista{display:flex;flex-direction:column;gap:14px}
+    .grupo{display:grid;grid-template-columns:70px 1fr;gap:14px}
+    .dia{display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:22px}
+    .dia small{color:#ffd700;font-size:12px}
+    .itens{border-left:4px solid #ffd700;padding-left:12px;display:flex;flex-direction:column;gap:10px}
+    .linha{background:rgba(255,255,255,.06);padding:10px;border-radius:10px;display:flex;justify-content:space-between}
+    .hora{color:#aaa}
+    .passado{background:rgba(0,255,128,.15)!important}
+    /* Loader */
+    #loader{position:fixed;inset:0;background:rgba(0,0,0,.8);display:none;align-items:center;justify-content:center;z-index:100}
+    .spinner{width:60px;height:60px;border:6px solid rgba(255,255,255,.2);border-top:6px solid #ffd700;border-radius:50%;animation:spin 1s linear infinite}
+    @keyframes spin{to{transform:rotate(360deg)}}
     /* Botão + */
-    #addBtn{position:fixed;bottom:20px;right:20px;border:none;background:var(--amarelo);color:#000;
-      font-size:28px;font-weight:900;padding:10px 16px;border-radius:50%;cursor:pointer;z-index:60;box-shadow:0 4px 16px rgba(0,0,0,.3);}
-
-    /* Modal genérico */
-    #modal,#formModal,#loginModal,#loader{position:fixed;inset:0;display:none;align-items:center;justify-content:center;background:rgba(0,0,0,.6);z-index:1000;}
-    .modal-box{width:min(92vw,380px);background:#101326;color:#fff;border-radius:14px;padding:18px;}
-    .modal-box h3{margin:0 0 10px;font-size:18px;display:flex;justify-content:space-between;align-items:center;}
-    .kv{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed rgba(255,255,255,.15);}
-    .kv:last-child{border-bottom:none;}
-    .kv b{color:var(--amarelo);}
-    .close{margin-top:12px;width:100%;}
-
-    #formModal .modal-box{background:#fff;color:#000;}
-    #formModal label{display:block;margin-top:8px;font-size:14px;}
-    #formModal input{width:100%;padding:8px;border:1px solid #ccc;border-radius:6px;margin-top:4px;font-size:15px;}
-    #formModal .btn{margin-top:12px;width:100%;}
-    #formModal .btn.delete{background:#dc2626;color:#fff;}
-
-    #loginBox{width:300px;background:#fff;color:#000;padding:20px;border-radius:12px;}
-
-    .spinner{width:60px;height:60px;border:6px solid rgba(255,255,255,0.2);
-      border-top:6px solid var(--amarelo);border-radius:50%;animation:spin 1s linear infinite;}
-    @keyframes spin{100%{transform:rotate(360deg);}}
+    #addBtn{position:fixed;bottom:20px;right:20px;background:#ffd700;color:#000;border:none;border-radius:50%;font-size:28px;font-weight:900;width:54px;height:54px;cursor:pointer;z-index:200}
   </style>
 </head>
 <body>
-  <div id="stars"></div>
-
-  <header class="titulo">
+  <header>
     <div>
       <h1>Agenda</h1>
-      <h2 id="empresaNome"></h2>
+      <h2 id="empresaNome">Mercatto Delícia</h2>
     </div>
-    <div class="top-actions">
-      <input id="calendarBtn" class="btn" readonly />
-    </div>
+    <input id="calendarBtn" readonly />
   </header>
 
   <div class="content"><main class="lista" id="lista"></main></div>
 
-  <div id="stars-front"></div>
-
-  <!-- Modal login -->
-  <div id="loginModal"><div id="loginBox">
-    <h3>Login</h3>
-    <input type="password" id="senha" placeholder="Digite a senha"/>
-    <button class="btn" onclick="login()">Entrar</button>
-    <div id="loginMsg" style="color:#f44;margin-top:6px;"></div>
-  </div></div>
-
-  <!-- Modal detalhes -->
-  <div id="modal"><div class="modal-box">
-    <h3>Detalhes <span id="editBtn">✏️</span></h3>
-    <div class="kv"><span>Data</span><b id="m_data"></b></div>
-    <div class="kv"><span>Cantor</span><b id="m_cantor"></b></div>
-    <div class="kv"><span>Horário</span><b id="m_hora"></b></div>
-    <div class="kv"><span>Valor</span><b id="m_valor"></b></div>
-    <button class="btn close" onclick="fecharModal()">Fechar</button>
-  </div></div>
-
-  <!-- Modal form -->
-  <div id="formModal"><div class="modal-box">
-    <h3 id="formTitle">Novo</h3>
-    <label>Data</label><input type="date" id="f_data"/>
-    <label>Cantor</label><input type="text" id="f_cantor"/>
-    <label>Horário</label><input type="time" id="f_hora"/>
-    <label>Valor</label><input type="number" id="f_valor" step="0.01"/>
-    <button class="btn" onclick="salvarRegistro()">Salvar</button>
-    <button id="deleteBtn" class="btn delete" style="display:none" onclick="deleteRegistro()">Excluir</button>
-    <button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button>
-  </div></div>
-
-  <!-- Loader -->
   <div id="loader"><div class="spinner"></div></div>
-
-  <!-- Botão + -->
   <button id="addBtn">+</button>
 
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
-  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
-  <script>
-    // Estrelas
-    function criarEstrelas(container, qtd){
-      for(let i=0;i<qtd;i++){
-        let s=document.createElement('div');
-        s.className='star';
-        s.style.left=Math.random()*100+'vw';
-        s.style.width=s.style.height=(Math.random()*2+1)+'px';
-        s.style.opacity=Math.random()*0.8+0.2;
-        s.style.animationDuration=3+Math.random()*5+'s';
-        s.style.animationDelay=Math.random()*5+'s';
-        container.appendChild(s);
-      }
-    }
-    criarEstrelas(document.getElementById('stars'),50);
-    criarEstrelas(document.getElementById('stars-front'),20);
+<script>
+const API_URL="https://script.google.com/macros/s/AKfycbzk3tiR8XssMBrmabs20JV0Lr9C7WTdzaoSXBgkvS-se9doBdk156XSkfVa5Fn0iQoZ/exec";
+let filtroDe=null,filtroAte=null;
 
-    // API
-    const API_URL="https://script.google.com/macros/s/AKfycbzk3tiR8XssMBrmabs20JV0Lr9C7WTdzaoSXBgkvS-se9doBdk156XSkfVa5Fn0iQoZ/exec";
-    const SENHAS={"0152":"Mercatto Delícia","1058":"Villa Gourmet","8486":"Delícia Gourmet"};
-    let EMPRESA=null,EDITANDO=null,filtroDe=null,filtroAte=null;
+const pad=n=>n.toString().padStart(2,"0");
+const toDateKey=d=>{if(!d)return null;const dt=new Date(d);return isNaN(dt)?null:`${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}`};
+const formatHora=h=>h?String(h).slice(0,5):"--:--";
 
-    const pad=n=>n.toString().padStart(2,'0');
-    function toDateKey(input){const d=new Date(input);return isNaN(d)?null:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-    const formatHora=h=>h?String(h).slice(0,5):"--:--";
-    const formatValor=v=>Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+function mostrarLoader(v){document.getElementById("loader").style.display=v?"flex":"none";}
 
-    function mostrarLoader(){document.getElementById('loader').style.display="flex";}
-    function esconderLoader(){document.getElementById('loader').style.display="none";}
+async function carregarAgenda(){
+  mostrarLoader(true);
+  const box=document.getElementById("lista");
+  box.innerHTML="";
+  try{
+    let eventos=await (await fetch(API_URL)).json();
 
-    function verificarLogin(){
-      const e=localStorage.getItem("empresa");
-      if(e){EMPRESA=e;document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";carregarAgenda();}
-      else document.getElementById('loginModal').style.display="flex";
-    }
-    function login(){
-      const s=document.getElementById('senha').value.trim();
-      if(SENHAS[s]){EMPRESA=SENHAS[s];localStorage.setItem("empresa",EMPRESA);document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";carregarAgenda();}
-      else document.getElementById('loginMsg').textContent="Senha incorreta.";
+    // segurança: se resposta não for array
+    if(!Array.isArray(eventos)){box.innerHTML="<p>⚠️ Nenhum dado retornado.</p>";mostrarLoader(false);return;}
+
+    // aplica filtro
+    if(filtroDe&&filtroAte){
+      const from=toDateKey(filtroDe),to=toDateKey(filtroAte);
+      eventos=eventos.filter(ev=>{
+        const k=toDateKey(ev.data);
+        return k&&k>=from&&k<=to;
+      });
     }
 
-    async function carregarAgenda(){
-      mostrarLoader();
-      const box=document.getElementById('lista');box.innerHTML="";
-      let eventos=await (await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`)).json();
+    // agrupa por data
+    const grupos={};
+    eventos.forEach(ev=>{
+      const k=toDateKey(ev.data);
+      if(!k) return;
+      (grupos[k] ||= []).push(ev);
+    });
 
-      if(filtroDe&&filtroAte){
-        const from=toDateKey(filtroDe),to=toDateKey(filtroAte);
-        eventos=eventos.filter(ev=>{const k=toDateKey(ev.data);return k&&k>=from&&k<=to;});
-      }
+    const dias=Object.keys(grupos).sort();
+    if(!dias.length){box.innerHTML="<p>📭 Sem eventos no período.</p>";mostrarLoader(false);return;}
 
-      const grupos={};
-      for(const ev of eventos){
-        const k=toDateKey(ev.data);if(!k)continue;
-        (grupos[k] ||= []).push(ev);
-      }
+    const hojeKey=toDateKey(new Date());
+    dias.forEach(k=>{
+      const [y,m,d]=k.split("-");
+      const dia=d,mes=new Date(y,m-1,d).toLocaleString("pt-BR",{month:"short"}).toUpperCase();
+      const passado=k<hojeKey?" passado":"";
+      const itens=grupos[k].map(ev=>
+        `<div class="linha${passado}"><div>${ev.cantor||"—"}</div><div class="hora">${formatHora(ev.hora)}</div></div>`
+      ).join("");
+      box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
+    });
 
-      const dias=Object.keys(grupos).sort();
-      if(!dias.length){box.innerHTML="<p>Sem eventos no período.</p>";esconderLoader();return;}
+  }catch(e){
+    console.error(e);
+    document.getElementById("lista").innerHTML="<p>❌ Erro ao carregar.</p>";
+  }
+  mostrarLoader(false);
+}
 
-      const hojeKey=toDateKey(new Date());
-      for(const k of dias){
-        const [y,m,d]=k.split('-').map(Number);
-        const dia=pad(d),mes=new Date(y,m-1,d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();
-        const passado=k<hojeKey?" passado":"";
-        const itens=grupos[k].map(ev=>`<div class="linha${pastado}" onclick="abrirModal('${k}',${ev.row},'${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')"><div class="texto">${ev.cantor}</div><div class="hora">${formatHora(ev.hora)}</div></div>`).join("");
-        box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
-      }
-      esconderLoader();
-    }
+// Flatpickr
+let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"d/m/Y",locale:"pt",
+  onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}
+});
 
-    function abrirModal(key,row,cantor,hora,valor){
-      document.getElementById('m_data').textContent=new Date(key).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
-      document.getElementById('m_cantor').textContent=cantor;
-      document.getElementById('m_hora').textContent=hora;
-      document.getElementById('m_valor').textContent=formatValor(valor);
-      EDITANDO={row,data:key,cantor,hora,valor};
-      document.getElementById('modal').style.display="flex";
-    }
-    function fecharModal(){document.getElementById('modal').style.display="none";}
+// define semana vigente por padrão
+(function(){
+  const hoje=new Date();const dia=hoje.getDay();
+  const segunda=new Date(hoje);segunda.setDate(hoje.getDate()-((dia+6)%7));
+  const domingo=new Date(segunda);domingo.setDate(segunda.getDate()+6);
+  filtroDe=segunda;filtroAte=domingo;
+  calendar.setDate([segunda,domingo],true);
+})();
 
-    document.getElementById('editBtn').onclick=()=>{if(EDITANDO){
-      document.getElementById('formTitle').textContent="Editar";
-      document.getElementById('f_data').value=EDITANDO.data;
-      document.getElementById('f_cantor').value=EDITANDO.cantor;
-      document.getElementById('f_hora').value=EDITANDO.hora;
-      document.getElementById('f_valor').value=EDITANDO.valor;
-      document.getElementById('deleteBtn').style.display="block";
-      fecharModal();document.getElementById('formModal').style.display="flex";
-    }};
-    document.getElementById('addBtn').onclick=()=>{EDITANDO=null;
-      document.getElementById('formTitle').textContent="Novo";
-      document.getElementById('f_data').value="";
-      document.getElementById('f_cantor').value="";
-      document.getElementById('f_hora').value="";
-      document.getElementById('f_valor').value="";
-      document.getElementById('deleteBtn').style.display="none";
-      document.getElementById('formModal').style.display="flex";};
-    function fecharForm(){document.getElementById('formModal').style.display="none";}
-
-    async function salvarRegistro(){
-      mostrarLoader();
-      const data=document.getElementById('f_data').value;
-      const cantor=document.getElementById('f_cantor').value;
-      const hora=document.getElementById('f_hora').value;
-      const valor=parseFloat(document.getElementById('f_valor').value)||0;
-      const payload={empresa:EMPRESA,data,cantor,hora,valor};
-      if(EDITANDO && EDITANDO.row){payload.action="update";payload.row=EDITANDO.row;}else{payload.action="create";}
-      await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});
-      fecharForm();carregarAgenda();
-    }
-    async function deleteRegistro(){
-      if(!EDITANDO||!EDITANDO.row) return;if(!confirm("Excluir este registro?")) return;
-      mostrarLoader();await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"delete",row:EDITANDO.row})});
-      fecharForm();carregarAgenda();
-    }
-
-    // Flatpickr calendário com semana vigente
-    let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"d/m/Y",locale:"pt",
-      onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}});
-
-    (function setSemanaAtual(){
-      const hoje=new Date();const dia=hoje.getDay();
-      const segunda=new Date(hoje);segunda.setDate(hoje.getDate()-((dia+6)%7));
-      const domingo=new Date(segunda);domingo.setDate(segunda.getDate()+6);
-      filtroDe=segunda;filtroAte=domingo;
-      calendar.setDate([segunda,domingo],true);
-    })();
-
-    verificarLogin();
-  </script>
+carregarAgenda();
+</script>
 </body>
 </html>
