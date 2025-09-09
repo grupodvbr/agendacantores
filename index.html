@@ -177,7 +177,6 @@
 
     const pad=n=>n.toString().padStart(2,'0');
     function toDateKey(input){const d=new Date(input);return isNaN(d)?null:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-    function parseHoraToHM(raw){if(!raw)return{hh:0,mm:0};const m=String(raw).match(/(\d{1,2}):(\d{2})/);return m?{hh:+m[1],mm:+m[2]}:{hh:0,mm:0};}
     const formatHora=h=>h?String(h).substring(0,5):"--:--";
     const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
@@ -217,8 +216,7 @@
       const grupos={};
       for(const ev of eventos){
         const k=toDateKey(ev.data);if(!k)continue;
-        const hm=parseHoraToHM(ev.hora);
-        (grupos[k] ||= []).push({...ev,_hh:hm.hh,_mm:hm.mm});
+        (grupos[k] ||= []).push(ev);
       }
 
       const dias=Object.keys(grupos).sort();
@@ -228,9 +226,12 @@
       for(const k of dias){
         const [y,m,d]=k.split('-').map(Number);
         const dia=pad(d),mes=new Date(y,m-1,d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();
-        grupos[k].sort((a,b)=>(a._hh*60+a._mm)-(b._hh*60+b._mm));
         const passado=k<hojeKey?" passado":"";
-        const itens=grupos[k].map(ev=>`<div class="linha${passado}" onclick="abrirModal('${k}',${ev.row},'${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')"><div class="texto">${ev.cantor}</div><div class="hora">${formatHora(ev.hora)}</div></div>`).join("");
+        const itens=grupos[k].map(ev=>`
+          <div class="linha${passado}" onclick="abrirModal('${k}',${ev.row},'${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')">
+            <div class="texto">${ev.cantor}</div>
+            <div class="hora">${formatHora(ev.hora)}</div>
+          </div>`).join("");
         box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
       }
       esconderLoader();
@@ -239,16 +240,33 @@
     function abrirModal(key,row,cantor,hora,valor){
       document.getElementById('m_data').textContent=new Date(key).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
       document.getElementById('m_cantor').textContent=cantor;
-      document.getElementById('m_hora').textContent=hora;
+      document.getElementById('m_hora').textContent=formatHora(hora);
       document.getElementById('m_valor').textContent=formatValor(valor);
       EDITANDO={row,data:key,cantor,hora,valor};
       document.getElementById('modal').style.display="flex";
     }
     function fecharModal(){document.getElementById('modal').style.display="none";}
 
-    document.getElementById('editBtn').onclick=()=>{if(EDITANDO){document.getElementById('formTitle').textContent="Editar Registro";document.getElementById('f_data').value=EDITANDO.data;document.getElementById('f_cantor').value=EDITANDO.cantor;document.getElementById('f_hora').value=formatHora(EDITANDO.hora);document.getElementById('f_valor').value=EDITANDO.valor;document.getElementById('deleteBtn').style.display="block";fecharModal();document.getElementById('formModal').style.display="flex";}};
+    document.getElementById('editBtn').onclick=()=>{if(EDITANDO){
+      document.getElementById('formTitle').textContent="Editar Registro";
+      document.getElementById('f_data').value=EDITANDO.data;
+      document.getElementById('f_cantor').value=EDITANDO.cantor;
+      document.getElementById('f_hora').value=formatHora(EDITANDO.hora);
+      document.getElementById('f_valor').value=EDITANDO.valor;
+      document.getElementById('deleteBtn').style.display="block";
+      fecharModal();
+      document.getElementById('formModal').style.display="flex";
+    }};
 
-    document.getElementById('addBtn').onclick=()=>{EDITANDO=null;document.getElementById('formTitle').textContent="Novo Registro";document.getElementById('f_data').value="";document.getElementById('f_cantor').value="";document.getElementById('f_hora').value="";document.getElementById('f_valor').value="";document.getElementById('deleteBtn').style.display="none";document.getElementById('formModal').style.display="flex";};
+    document.getElementById('addBtn').onclick=()=>{EDITANDO=null;
+      document.getElementById('formTitle').textContent="Novo Registro";
+      document.getElementById('f_data').value="";
+      document.getElementById('f_cantor').value="";
+      document.getElementById('f_hora').value="";
+      document.getElementById('f_valor').value="";
+      document.getElementById('deleteBtn').style.display="none";
+      document.getElementById('formModal').style.display="flex";
+    };
 
     function fecharForm(){document.getElementById('formModal').style.display="none";}
 
@@ -257,7 +275,7 @@
       const data=document.getElementById('f_data').value;
       const cantor=document.getElementById('f_cantor').value;
       let hora=document.getElementById('f_hora').value;
-      if(hora && hora.length===5) hora=hora+":00"; // garante HH:mm:ss
+      if(hora && hora.length===5) hora=hora; // sempre HH:mm
       let valor=document.getElementById('f_valor').value.replace(',','.');
       valor=parseFloat(valor)||0;
       const payload={empresa:EMPRESA,data,cantor,hora,valor};
