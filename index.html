@@ -64,8 +64,7 @@
       display:grid; grid-template-columns:92px 1fr; gap:14px;
     }
     .dia{
-      display:flex; flex-direction:column; align-items:center; justify-content:flex-start;
-      padding-top:6px;
+      display:flex; flex-direction:column; align-items:center; justify-content:center; /* <<< centralizado */
       font-family:'Bebas Neue', sans-serif;
       font-size:34px; color:#fff; line-height:.9;
     }
@@ -211,7 +210,6 @@
     // ========== HELPERS ==========
     const pad = n => n.toString().padStart(2,'0');
 
-    // Normaliza hora para HH:mm sem criar Date base 1899
     function formatHora(raw){
       if(!raw) return "";
       let t = String(raw).trim().replace('.',':');
@@ -241,7 +239,6 @@
       const res = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
       let eventos = await res.json();
 
-      // filtra por período (se houver)
       if(inicio && fim){
         const de = new Date(inicio), ate = new Date(fim);
         eventos = eventos.filter(ev => {
@@ -250,21 +247,18 @@
         });
       }
 
-      // ordena data/hora
       eventos.sort((a,b)=>{
         const dd = new Date(a.data) - new Date(b.data);
         if(dd !== 0) return dd;
         return formatHora(a.hora).localeCompare(formatHora(b.hora));
       });
 
-      // agrupa por dia
       const grupos = {};
       for(const ev of eventos){
         const {key} = fmtDiaLabel(ev.data);
         (grupos[key] ||= []).push(ev);
       }
 
-      // render
       box.innerHTML = "";
       const dias = Object.keys(grupos).sort();
       if(!dias.length){
@@ -282,7 +276,6 @@
           return `
             <div class="linha" onclick="abrirModal('${dataLegivel}','${cantor.replace(/'/g,"\\'")}','${hora}','${valor}')">
               <div class="texto">${cantor} <span class="divider">–</span> <span class="hora">${hora}</span></div>
-              <!-- valor escondido, mostrado no modal -->
             </div>`;
         }).join("");
 
@@ -306,13 +299,12 @@
     document.getElementById('modal').addEventListener('click', (e)=>{ if(e.target.id==='modal') fecharModal(); });
 
     // ========== CALENDÁRIO ==========
-    const fp = flatpickr("#calendarBtn", {
+    flatpickr("#calendarBtn", {
       mode:"range",
       dateFormat:"Y-m-d",
       onClose:(dates)=>{ if(dates.length===2) carregarAgenda(dates[0], dates[1]); }
     });
 
-    // start
     verificarLogin();
   </script>
 </body>
