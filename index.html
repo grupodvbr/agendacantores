@@ -16,25 +16,27 @@
   <style>
     :root{
       --amarelo:#ffd700;
+      --overlay:rgba(10,0,30,.78);
       --texto:#fff;
       --muted:#d8d8d8;
       --card:rgba(255,255,255,.06);
       --line:rgba(255,255,255,.18);
     }
+    html,body{ height:100%; }
     body{
       margin:0;
-      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Captura%20de%20tela%202025-09-09%20163930.png?raw=true') 
-        no-repeat center center fixed;
-      background-size:cover;
+      background:url('https://github.com/grupodvbr/agendamercatto/blob/main/paste/Design%20sem%20nome%20(24).png?raw=true') no-repeat center center/cover;
+      background-attachment: fixed; /* fundo fixo */
       color:var(--texto);
       font-family:'Poppins',sans-serif;
+      overflow:hidden; /* rolagem só no conteúdo */
     }
     .overlay{
-      min-height:100vh;
-      padding:18px 16px 80px; 
-      display:flex; 
-      flex-direction:column; 
-      align-items:center;
+      min-height:100%;
+      background:var(--overlay);
+      padding:18px 16px 80px;
+      display:flex; flex-direction:column; align-items:center;
+      overflow-y:auto; /* rola só as datas */
     }
 
     /* Cabeçalho */
@@ -61,11 +63,7 @@
     #calendarBtn{ min-width:38px; }
 
     /* Lista */
-    .lista{ 
-      width:100%; max-width:820px; margin-top:18px; 
-      display:flex; flex-direction:column; gap:14px; 
-      overflow-y:auto; max-height:70vh; padding-right:6px;
-    }
+    .lista{ width:100%; max-width:820px; margin-top:18px; display:flex; flex-direction:column; gap:14px; }
     .grupo{ display:grid; grid-template-columns:92px 1fr; gap:14px; }
     .dia{
       display:flex; flex-direction:column; align-items:center; justify-content:center;
@@ -207,7 +205,10 @@
     const SENHAS = { "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
     let EMPRESA = null;
     let EDITANDO = null;
-    let filtroInicio = null, filtroFim = null;
+
+    // Estado do filtro (datas do calendário)
+    let filtroDe = null;
+    let filtroAte = null;
 
     function mostrarLoader(){ document.getElementById('loader').style.display="flex"; }
     function esconderLoader(){ document.getElementById('loader').style.display="none"; }
@@ -237,6 +238,29 @@
 
     // ---------- HELPERS ----------
     const pad = n => n.toString().padStart(2,'0');
+
+    // Normaliza para 'YYYY-MM-DD' (aceita Date ou string em vários formatos)
+    function toDateOnlyKey(input){
+      if (input instanceof Date) {
+        return `${input.getFullYear()}-${pad(input.getMonth()+1)}-${pad(input.getDate())}`;
+      }
+      const s = String(input||'').trim();
+
+      // ISO YYYY-MM-DD ou YYYY-MM-DDTHH:mm
+      let m = s.match(/(\d{4})-(\d{2})-(\d{2})/);
+      if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+
+      // dd/mm/yyyy
+      m = s.match(/(\d{2})[\/\-](\d{2})[\/\-](\d{4})/);
+      if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+
+      // Fallback Date()
+      const d = new Date(s);
+      if(!isNaN(d)) return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+
+      return ""; // inválido
+    }
+
     function parseHoraToHM(raw){
       if(raw == null) return {hh:0, mm:0};
       const s = String(raw).trim();
@@ -254,53 +278,68 @@
       mostrarLoader();
       const box = document.getElementById('lista');
       box.innerHTML = "";
+
       const res = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
       let eventos = await res.json();
 
-      // aplica filtro de período, se existir
-      if(filtroInicio && filtroFim){
-        const de = new Date(filtroInicio);
-        const ate = new Date(filtroFim);
+      // Filtra por período SE houver seleção
+      if (filtroDe && filtroAte) {
+        const fromKey = toDateOnlyKey(filtroDe);
+        const toKey   = toDateOnlyKey(filtroAte);
         eventos = eventos.filter(ev=>{
-          const d = new Date(ev.data);
-          return d >= de && d <= ate;
+          const k = toDateOnlyKey(ev.data);
+          return k && k >= fromKey && k <= toKey;
         });
       }
 
-      const grupos={};
+      // Agrupar por data (key) e ordenar
+      const grupos = {};
       for(const ev of eventos){
-        const d = new Date(ev.data);
-        const key = `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-        if(!grupos[key]) grupos[key]=[];
+        const key = toDateOnlyKey(ev.data);
+        if(!key) continue;
         const hm = parseHoraToHM(ev.hora);
-        grupos[key].push({...ev,_hh:hm.hh,_mm:hm.mm});
+        (grupos[key] ||= []).push({...ev,_hh:hm.hh,_mm:hm.mm, _key:key});
       }
 
-      box.innerHTML="";
-      for(const k of Object.keys(grupos).sort()){
-        const d=new Date(k);
-        const dia=pad(d.getDate()), mes=d.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
-        grupos[k].sort((a,b)=> (a._hh*60+a._mm)-(b._hh*60+b._mm));
-        const itens=grupos[k].map(ev=>`
-          <div class="linha" onclick="abrirModal('${k}','${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')">
-            <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
-          </div>`).join("");
-        box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
+      const dias = Object.keys(grupos).sort();
+      if(!dias.length){
+        box.innerHTML = "<p style='opacity:.85'>Sem eventos no período selecionado.</p>";
+        esconderLoader();
+        return;
       }
-      if(!Object.keys(grupos).length){
-        box.innerHTML = "<p style='opacity:.8'>Sem eventos no período selecionado.</p>";
+
+      for(const k of dias){
+        const [y,m,d] = k.split('-').map(Number);
+        const dia = pad(d);
+        const mes = new Date(y, m-1, d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();
+
+        grupos[k].sort((a,b)=> (a._hh*60+a._mm)-(b._hh*60+b._mm));
+
+        const itens = grupos[k].map(ev=>`
+          <div class="linha" onclick="abrirModal('${k}','${(ev.cantor||'').replace(/'/g,"\\'")}','${formatHora(ev.hora)}','${ev.valor}')">
+            <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
+          </div>
+        `).join("");
+
+        box.innerHTML += `
+          <section class="grupo">
+            <div class="dia">${dia}<small>${mes}</small></div>
+            <div class="itens">${itens}</div>
+          </section>
+        `;
       }
       esconderLoader();
     }
 
     // ---------- MODAIS ----------
-    function abrirModal(dataISO,cantor,hora,valor){
-      const d=new Date(dataISO);
-      document.getElementById('m_data').textContent=d.toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+    function abrirModal(keyISO,cantor,hora,valor){
+      const [y,m,d] = keyISO.split('-').map(Number);
+      const dataLegivel = new Date(y, m-1, d).toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'short', year:'numeric'});
+      document.getElementById('m_data').textContent=dataLegivel;
       document.getElementById('m_cantor').textContent=cantor;
       document.getElementById('m_hora').textContent=hora;
       document.getElementById('m_valor').textContent=formatValor(valor);
-      EDITANDO={data:dataISO,cantor,hora,valor};
+      EDITANDO={data:keyISO,cantor,hora,valor};
       document.getElementById('modal').style.display="flex";
     }
     function fecharModal(){ document.getElementById('modal').style.display="none"; }
@@ -309,6 +348,7 @@
     document.getElementById('editBtn').onclick=()=>{
       if(EDITANDO){
         document.getElementById('formTitle').textContent="Editar Registro";
+        // converte key ISO (YYYY-MM-DD) direto pro input date
         document.getElementById('f_data').value=EDITANDO.data;
         document.getElementById('f_cantor').value=EDITANDO.cantor;
         document.getElementById('f_hora').value=formatHora(EDITANDO.hora);
@@ -332,9 +372,9 @@
 
     async function salvarRegistro(){
       mostrarLoader();
-      const data=document.getElementById('f_data').value;
+      const data=document.getElementById('f_data').value;     // YYYY-MM-DD
       const cantor=document.getElementById('f_cantor').value;
-      const hora=document.getElementById('f_hora').value;
+      const hora=document.getElementById('f_hora').value;     // HH:mm
       let valor=document.getElementById('f_valor').value.replace(',','.');
       valor=parseFloat(valor)||0;
 
@@ -346,15 +386,18 @@
       carregarAgenda();
     }
 
-    // Calendário com filtro
+    // Calendário (range) — atualiza estado do filtro e re-renderiza
     flatpickr("#calendarBtn",{
-      mode:"range",dateFormat:"Y-m-d",
-      onClose:(d)=>{
-        if(d.length===2){
-          filtroInicio=d[0]; 
-          filtroFim=d[1];
-          carregarAgenda();
+      mode:"range",
+      dateFormat:"Y-m-d",
+      onClose:(dates)=>{
+        if(dates.length===2){
+          filtroDe = dates[0];
+          filtroAte = dates[1];
+        }else{
+          filtroDe = filtroAte = null; // sem filtro
         }
+        carregarAgenda();
       }
     });
 
