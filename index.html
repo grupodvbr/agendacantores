@@ -4,13 +4,10 @@
   <meta charset="UTF-8" />
   <title>Agenda de Músicos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-
-  <!-- Logo no navegador -->
   <link rel="icon" type="image/png" href="logo.png" />
 
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Great+Vibes&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
-  <!-- Flatpickr -->
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 
   <style>
@@ -29,7 +26,7 @@
       background-attachment: fixed;
       font-family:'Poppins',sans-serif;
       color:var(--texto);
-      overflow-y:auto; /* libera scroll geral */
+      overflow-y:auto;
     }
     .overlay{
       min-height:100%;
@@ -40,10 +37,7 @@
 
     /* Estrelas */
     #stars{position:fixed;top:0;left:0;width:100%;height:100%;overflow:hidden;z-index:-1;}
-    .star{
-      position:absolute;width:2px;height:2px;background:#fff;opacity:.5;
-      border-radius:50%;animation:fall linear infinite;
-    }
+    .star{position:absolute;width:2px;height:2px;background:#fff;opacity:.5;border-radius:50%;animation:fall linear infinite;}
     @keyframes fall{0%{transform:translateY(-10vh);}100%{transform:translateY(110vh);} }
 
     /* Cabeçalho */
@@ -167,67 +161,56 @@
       stars.appendChild(s);
     }
 
-    const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec";
-    const SENHAS = { "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
-    let EMPRESA=null, EDITANDO=null;
-    let filtroDe=null, filtroAte=null;
+    const API_URL="https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec";
+    const SENHAS={ "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
+    let EMPRESA=null,EDITANDO=null;
+    let filtroDe=null,filtroAte=null;
 
-    function mostrarLoader(){ document.getElementById('loader').style.display="flex"; }
-    function esconderLoader(){ document.getElementById('loader').style.display="none"; }
+    function mostrarLoader(){document.getElementById('loader').style.display="flex";}
+    function esconderLoader(){document.getElementById('loader').style.display="none";}
 
     function verificarLogin(){
       const e=localStorage.getItem("empresa");
-      if(e){ EMPRESA=e; document.getElementById('empresaNome').textContent=EMPRESA; document.getElementById('loginModal').style.display="none"; carregarAgenda(); }
+      if(e){EMPRESA=e;document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";initAgenda();}
     }
     function login(){
       const s=document.getElementById('senha').value.trim();
-      if(SENHAS[s]){ EMPRESA=SENHAS[s]; localStorage.setItem("empresa",EMPRESA); document.getElementById('empresaNome').textContent=EMPRESA; document.getElementById('loginModal').style.display="none"; carregarAgenda(); }
+      if(SENHAS[s]){EMPRESA=SENHAS[s];localStorage.setItem("empresa",EMPRESA);document.getElementById('empresaNome').textContent=EMPRESA;document.getElementById('loginModal').style.display="none";initAgenda();}
       else document.getElementById('loginMsg').textContent="Senha incorreta.";
     }
 
     const pad=n=>n.toString().padStart(2,'0');
     function toDateKey(input){const d=new Date(input);return isNaN(d)?null:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-    function parseHoraToHM(raw){if(!raw) return{hh:0,mm:0}; const m=String(raw).match(/(\d{1,2}):(\d{2})/); return m?{hh:+m[1],mm:+m[2]}:{hh:0,mm:0};}
+    function parseHoraToHM(raw){if(!raw) return{hh:0,mm:0};const m=String(raw).match(/(\d{1,2}):(\d{2})/);return m?{hh:+m[1],mm:+m[2]}:{hh:0,mm:0};}
     const formatHora=raw=>{const {hh,mm}=parseHoraToHM(raw);return `${pad(hh)}:${pad(mm)}`;}
     const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
     async function carregarAgenda(){
       mostrarLoader();
-      const box=document.getElementById('lista'); box.innerHTML="";
-      let res=await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`); let eventos=await res.json();
-
-      // Semana vigente
-      if(!filtroDe && !filtroAte){
-        const hoje=new Date(); const diaSemana=hoje.getDay();
-        const segunda=new Date(hoje); segunda.setDate(hoje.getDate()-((diaSemana+6)%7));
-        const domingo=new Date(segunda); domingo.setDate(segunda.getDate()+6);
-        filtroDe=segunda; filtroAte=domingo;
-      }
+      const box=document.getElementById('lista');box.innerHTML="";
+      let res=await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);let eventos=await res.json();
 
       if(filtroDe && filtroAte){
-        const from=toDateKey(filtroDe), to=toDateKey(filtroAte);
-        eventos=eventos.filter(ev=>{const k=toDateKey(ev.data); return k && k>=from && k<=to;});
+        const from=toDateKey(filtroDe),to=toDateKey(filtroAte);
+        eventos=eventos.filter(ev=>{const k=toDateKey(ev.data);return k && k>=from && k<=to;});
       }
 
       const grupos={};
-      for(const ev of eventos){const k=toDateKey(ev.data); if(!k) continue; const hm=parseHoraToHM(ev.hora); (grupos[k] ||= []).push({...ev,_hh:hm.hh,_mm:hm.mm});}
-
+      for(const ev of eventos){const k=toDateKey(ev.data);if(!k)continue;const hm=parseHoraToHM(ev.hora);(grupos[k] ||= []).push({...ev,_hh:hm.hh,_mm:hm.mm});}
       const dias=Object.keys(grupos).sort();
-      if(!dias.length){ box.innerHTML="<p style='opacity:.85'>Sem eventos no período.</p>"; esconderLoader(); return;}
+      if(!dias.length){box.innerHTML="<p style='opacity:.85'>Sem eventos no período.</p>";esconderLoader();return;}
 
       const hojeKey=toDateKey(new Date());
       for(const k of dias){
         const [y,m,d]=k.split('-').map(Number);
-        const dia=pad(d), mes=new Date(y,m-1,d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();
+        const dia=pad(d),mes=new Date(y,m-1,d).toLocaleString('pt-BR',{month:'short'}).toUpperCase();
         grupos[k].sort((a,b)=>(a._hh*60+a._mm)-(b._hh*60+b._mm));
-
         const itens=grupos[k].map(ev=>{
           const classe=(k<hojeKey)?"linha passado":"linha";
           return `<div class="${classe}" onclick="abrirModal('${k}','${ev.cantor}','${formatHora(ev.hora)}','${ev.valor}')">
             <div class="texto">${ev.cantor} – <span class="hora">${formatHora(ev.hora)}</span></div>
           </div>`;
         }).join("");
-
         box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
       }
       esconderLoader();
@@ -235,7 +218,7 @@
 
     function abrirModal(key,cantor,hora,valor){
       const [y,m,d]=key.split('-').map(Number);
-      document.getElementById('m_data').textContent=new Date(y,m-1,d).toLocaleDateString('pt-BR',{weekday:'short', day:'2-digit', month:'short'});
+      document.getElementById('m_data').textContent=new Date(y,m-1,d).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
       document.getElementById('m_cantor').textContent=cantor;
       document.getElementById('m_hora').textContent=hora;
       document.getElementById('m_valor').textContent=formatValor(valor);
@@ -256,7 +239,23 @@
       await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});fecharForm();carregarAgenda();
     }
 
-    flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}});
+    // Inicializa Flatpickr já com a semana vigente
+    function initAgenda(){
+      const hoje=new Date();const diaSemana=hoje.getDay();
+      const segunda=new Date(hoje);segunda.setDate(hoje.getDate()-((diaSemana+6)%7));
+      const domingo=new Date(segunda);domingo.setDate(segunda.getDate()+6);
+      filtroDe=segunda;filtroAte=domingo;
+
+      flatpickr("#calendarBtn",{
+        mode:"range",
+        dateFormat:"Y-m-d",
+        defaultDate:[filtroDe,filtroAte], // já seleciona no calendário
+        onClose:(dates)=>{filtroDe=dates[0]||null;filtroAte=dates[1]||null;carregarAgenda();}
+      });
+
+      carregarAgenda();
+    }
+
     verificarLogin();
   </script>
 </body>
