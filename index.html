@@ -27,7 +27,7 @@
     }
     .overlay{
       min-height:100vh; background:var(--overlay);
-      padding:18px 16px 32px; display:flex; flex-direction:column; align-items:center;
+      padding:18px 16px 80px; display:flex; flex-direction:column; align-items:center;
     }
 
     /* Cabeçalho */
@@ -74,17 +74,17 @@
     .linha .texto{ font-weight:700; color:#fff; }
     .linha .hora{ color:var(--muted); font-weight:700; }
 
-    /* FAB (+) */
+    /* FAB (+) centralizado */
     #addBtn{
-      position:fixed; bottom:24px; right:24px;
-      width:56px; height:56px;
+      position:fixed; bottom:24px; left:50%; transform:translateX(-50%);
+      width:64px; height:64px;
       border-radius:50%; border:none; cursor:pointer;
       background:var(--amarelo); color:#000;
-      font-size:28px; font-weight:900;
+      font-size:34px; font-weight:900;
       box-shadow:0 6px 18px rgba(0,0,0,.4);
     }
 
-    /* Modal genérico */
+    /* Modal detalhes */
     #modal,#formModal{
       position:fixed; inset:0; display:none; align-items:center; justify-content:center;
       background:rgba(0,0,0,.6); z-index:1000;
@@ -109,6 +109,14 @@
     /* Login */
     #loginModal{ position:fixed; inset:0; display:flex; align-items:center; justify-content:center; background:rgba(0,0,0,.8); z-index:1500; }
     #loginBox{ width:320px; background:#fff; color:#000; padding:20px; border-radius:12px; }
+
+    /* Mobile */
+    @media(max-width:640px){
+      .title{ font-size:36px; }
+      .subtitle{ font-size:24px; }
+      .grupo{ grid-template-columns:70px 1fr; }
+      .dia{ font-size:26px; }
+    }
   </style>
 </head>
 <body>
@@ -188,13 +196,15 @@
     const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
     // Render
-    async function carregarAgenda(){
+    async function carregarAgenda(inicio=null,fim=null){
       const box=document.getElementById('lista'); box.innerHTML="Carregando...";
       const res=await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
       let eventos=await res.json();
+
+      if(inicio&&fim){ const de=new Date(inicio),ate=new Date(fim); eventos=eventos.filter(ev=>{const d=new Date(ev.data); return d>=de&&d<=ate;}); }
+
       eventos.sort((a,b)=> new Date(a.data)-new Date(b.data));
-      const grupos={};
-      eventos.forEach(ev=>{ const k=ev.data; (grupos[k] ||= []).push(ev); });
+      const grupos={}; eventos.forEach(ev=>{ const k=ev.data; (grupos[k] ||= []).push(ev); });
       box.innerHTML="";
       for(const k of Object.keys(grupos)){
         const d=new Date(k); const dia=pad(d.getDate()); const mes=d.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
@@ -216,7 +226,7 @@
     }
     function fecharModal(){ document.getElementById('modal').style.display="none"; }
 
-    // FAB
+    // Form
     document.getElementById('addBtn').onclick=()=>{ document.getElementById('formModal').style.display="flex"; };
     function fecharForm(){ document.getElementById('formModal').style.display="none"; }
     async function salvarRegistro(){
@@ -225,6 +235,8 @@
       fecharForm(); carregarAgenda();
     }
 
+    // Calendário
+    flatpickr("#calendarBtn",{mode:"range",dateFormat:"Y-m-d",onClose:(dates)=>{if(dates.length===2) carregarAgenda(dates[0],dates[1]);}});
     verificarLogin();
   </script>
 </body>
