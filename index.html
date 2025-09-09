@@ -14,14 +14,16 @@
     .overlay {
       background:rgba(10,0,30,0.75);
       min-height:100vh;
-      padding:30px 20px;
+      padding:20px;
       display:flex;
       flex-direction:column;
       align-items:center;
     }
     .titulo {
       text-align:center;
-      margin-bottom:40px;
+      margin-bottom:10px;
+      position:relative;
+      width:100%;
     }
     .titulo h1 {
       font-size:38px;
@@ -34,6 +36,26 @@
       font-weight:600;
       margin:5px 0 0;
       font-style:italic;
+    }
+    /* Botão lápis */
+    #editBtn {
+      position:absolute;
+      top:0;
+      right:10px;
+      font-size:20px;
+      cursor:pointer;
+      color:#ffd700;
+    }
+    /* Filtro datas */
+    .filtro {
+      margin:10px 0 30px;
+      font-size:14px;
+      color:#ddd;
+    }
+    .filtro input {
+      padding:5px;
+      border-radius:6px;
+      border:none;
     }
     .lista {
       max-width:500px;
@@ -60,6 +82,7 @@
       border-left:3px solid #ffd700;
       padding-left:15px;
       margin-left:10px;
+      flex:1;
     }
     .detalhes h3 {
       margin:0;
@@ -88,10 +111,26 @@
       border:1px solid #ccc; border-radius:6px; }
     #loginMsg { color:red; margin-top:8px; font-size:14px; }
     button {
-      padding:10px 20px; border:none; border-radius:8px;
+      padding:6px 12px; border:none; border-radius:6px;
       background:#ffd700; font-weight:bold; cursor:pointer;
-      margin-top:15px;
+      margin-top:6px;
     }
+    /* Painel admin */
+    #adminPanel {
+      position:fixed; inset:0;
+      background:rgba(0,0,0,.85);
+      display:none; align-items:center; justify-content:center;
+      z-index:2000;
+    }
+    #adminBox {
+      background:#fff; color:#000; padding:20px;
+      border-radius:12px; width:90%; max-width:600px;
+      max-height:80vh; overflow:auto;
+    }
+    #adminBox h2 { margin-top:0 }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th, td { border:1px solid #ccc; padding:6px; text-align:left; }
+    .actions button { margin-right:4px; }
   </style>
 </head>
 <body>
@@ -99,8 +138,30 @@
     <div class="titulo">
       <h1>Músicos da Semana</h1>
       <h2 id="empresaNome"></h2>
+      <span id="editBtn" title="Gerenciar">✏️</span>
     </div>
+
+    <div class="filtro">
+      <label>De: <input type="date" id="dataDe"></label>
+      <label>Até: <input type="date" id="dataAte"></label>
+      <button onclick="filtrarAgenda()">Filtrar</button>
+    </div>
+
     <div class="lista" id="agenda"></div>
+  </div>
+
+  <!-- Painel Admin -->
+  <div id="adminPanel">
+    <div id="adminBox">
+      <h2>Gerenciar Agenda</h2>
+      <table id="tabelaAdmin">
+        <thead>
+          <tr><th>Data</th><th>Hora</th><th>Cantor</th><th>Valor</th><th>Ações</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <button onclick="fecharAdmin()">Fechar</button>
+    </div>
   </div>
 
   <!-- Login -->
@@ -115,7 +176,6 @@
   </div>
 
 <script>
-// URL do Apps Script que retorna os eventos filtrados por empresa
 const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec"; 
 let empresa = null;
 
@@ -126,7 +186,7 @@ const SENHAS = {
   "9999": "Delícia Gourmet"
 };
 
-// Checa se já está logado
+// ===== LOGIN =====
 function verificarLogin(){
   const e = localStorage.getItem("empresa");
   if(e){
@@ -136,8 +196,6 @@ function verificarLogin(){
     carregarAgenda();
   }
 }
-
-// Faz login com senha fixa
 function login(){
   const senha = document.getElementById("senha").value;
   if(SENHAS[senha]){
@@ -151,12 +209,23 @@ function login(){
   }
 }
 
-// Carrega agenda da empresa logada
-async function carregarAgenda(){
+// ===== LISTAGEM =====
+async function carregarAgenda(filtroDe=null, filtroAte=null){
   const lista = document.getElementById("agenda");
   lista.innerHTML="<p>Carregando...</p>";
   const res = await fetch(API_URL+"?empresa="+encodeURIComponent(empresa));
-  const eventos = await res.json();
+  let eventos = await res.json();
+
+  // aplica filtro por data
+  if(filtroDe && filtroAte){
+    const de = new Date(filtroDe);
+    const ate = new Date(filtroAte);
+    eventos = eventos.filter(ev=>{
+      const d = new Date(ev.data);
+      return d >= de && d <= ate;
+    });
+  }
+
   lista.innerHTML="";
   eventos.forEach(ev=>{
     const d = new Date(ev.data);
@@ -171,6 +240,65 @@ async function carregarAgenda(){
         </div>
       </div>`;
   });
+}
+function filtrarAgenda(){
+  const de = document.getElementById("dataDe").value;
+  const ate = document.getElementById("dataAte").value;
+  if(de && ate) carregarAgenda(de, ate);
+}
+
+// ===== ADMIN =====
+document.getElementById("editBtn").addEventListener("click", abrirAdmin);
+
+async function abrirAdmin(){
+  const res = await fetch(API_URL+"?empresa="+encodeURIComponent(empresa));
+  const eventos = await res.json();
+  const tbody = document.querySelector("#tabelaAdmin tbody");
+  tbody.innerHTML="";
+  eventos.forEach(ev=>{
+    tbody.innerHTML += `
+      <tr>
+        <td><input type="date" value="${ev.data}" data-row="${ev.row}" data-field="data"></td>
+        <td><input type="time" value="${ev.hora}" data-row="${ev.row}" data-field="hora"></td>
+        <td><input type="text" value="${ev.cantor}" data-row="${ev.row}" data-field="cantor"></td>
+        <td><input type="number" value="${ev.valor}" data-row="${ev.row}" data-field="valor"></td>
+        <td class="actions">
+          <button onclick="salvar(${ev.row})">💾</button>
+          <button onclick="excluir(${ev.row})">🗑️</button>
+        </td>
+      </tr>`;
+  });
+  document.getElementById("adminPanel").style.display="flex";
+}
+function fecharAdmin(){
+  document.getElementById("adminPanel").style.display="none";
+  carregarAgenda();
+}
+
+// Atualizar evento
+async function salvar(row){
+  const inputs = document.querySelectorAll(`[data-row='${row}']`);
+  const body = {row: row, empresa: empresa};
+  inputs.forEach(inp=> body[inp.dataset.field] = inp.value);
+
+  await fetch(API_URL, {
+    method: "PUT",
+    body: JSON.stringify(body),
+    headers: {"Content-Type":"application/json"}
+  });
+  alert("Atualizado!");
+}
+
+// Excluir evento
+async function excluir(row){
+  if(!confirm("Deseja excluir este evento?")) return;
+  await fetch(API_URL, {
+    method: "DELETE",
+    body: JSON.stringify({row: row}),
+    headers: {"Content-Type":"application/json"}
+  });
+  alert("Excluído!");
+  abrirAdmin();
 }
 
 verificarLogin();
