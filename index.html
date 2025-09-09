@@ -5,6 +5,9 @@
   <title>Agenda de Músicos</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
+  <!-- Logo no navegador -->
+  <link rel="icon" type="image/png" href="logo.png" />
+
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Great+Vibes&family=Poppins:wght@300;400;600;700;900&display=swap" rel="stylesheet">
   <!-- Flatpickr -->
@@ -42,7 +45,7 @@
     .subtitle{
       margin:8px 0 0;
       font-family:'Great Vibes', cursive;
-      font-size:28px;
+      font-size:30px;
       color:#fff;
     }
     .top-actions{ position:absolute; top:0; right:0; }
@@ -109,6 +112,21 @@
     #loginModal{ background:rgba(0,0,0,.8); z-index:1500; }
     #loginBox{ width:320px; background:#fff; color:#000; padding:20px; border-radius:12px; }
 
+    /* Loader */
+    #loader{
+      position:fixed; inset:0;
+      display:none; align-items:center; justify-content:center;
+      background:rgba(0,0,0,.6); z-index:2000;
+    }
+    .spinner{
+      width:60px; height:60px;
+      border:6px solid rgba(255,255,255,0.2);
+      border-top:6px solid var(--amarelo);
+      border-radius:50%;
+      animation:spin 1s linear infinite;
+    }
+    @keyframes spin{ 100%{ transform:rotate(360deg);} }
+
     /* Mobile */
     @media(max-width:640px){
       .title{ font-size:36px; }
@@ -172,12 +190,18 @@
     </div>
   </div>
 
+  <!-- Loader -->
+  <div id="loader"><div class="spinner"></div></div>
+
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script>
     const API_URL = "https://script.google.com/macros/s/AKfycbzdkG1SxDulc0UDbf4PYwBvMQoJI1sDRQZ33VnJOLCS1pU_autY_CPULkm2usC9vfvW/exec";
     const SENHAS = { "1234":"Mercatto Delícia", "5678":"Villa Gourmet", "9999":"Delícia Gourmet" };
     let EMPRESA = null;
     let EDITANDO = null;
+
+    function mostrarLoader(){ document.getElementById('loader').style.display="flex"; }
+    function esconderLoader(){ document.getElementById('loader').style.display="none"; }
 
     // ---------- LOGIN ----------
     function verificarLogin(){
@@ -218,8 +242,9 @@
 
     // ---------- RENDER ----------
     async function carregarAgenda(inicio=null, fim=null){
+      mostrarLoader();
       const box = document.getElementById('lista');
-      box.innerHTML = "Carregando...";
+      box.innerHTML = "";
       const res = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
       let eventos = await res.json();
 
@@ -243,6 +268,7 @@
           </div>`).join("");
         box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
       }
+      esconderLoader();
     }
 
     // ---------- MODAIS ----------
@@ -283,6 +309,7 @@
     function fecharForm(){ document.getElementById('formModal').style.display="none"; }
 
     async function salvarRegistro(){
+      mostrarLoader();
       const data=document.getElementById('f_data').value;
       const cantor=document.getElementById('f_cantor').value;
       const hora=document.getElementById('f_hora').value;
