@@ -132,15 +132,28 @@
     criarEstrelas(20,document.getElementById('stars-front'));
 
     // CONFIG
-    const API_URL="https://script.google.com/macros/s/AKfycbzcq7_0-Va8PrJE_Gh-mQszBFuXegWx-EzVA5Y30tYJ39yZn0TqmZT0-dKlZwgv01w4/exec";
+    const API_URL="https://script.google.com/macros/s/AKfycbzcq7_0-Va8PrJE_Gh-mQszBFuXegWx-EzVA5Y30tYJ39yZn0TqmZT0-dKlZwgv01w4/exec"; // 🔗 substitua pelo seu GAS publicado
     const SENHAS={"0152":"Mercatto Delícia","1058":"Villa Gourmet","8486":"Delícia Gourmet"};
     let EMPRESA=null,EDITANDO=null,filtroDe=null,filtroAte=null;
 
     const pad=n=>n.toString().padStart(2,'0');
     const toDateKey=i=>{const d=new Date(i);return isNaN(d)?null:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-    const formatHora=h=>h?String(h).substring(0,5):"--:--";
-    const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
+    function formatHora(h){
+      if(!h) return "--:--";
+      if(h instanceof Date){ return h.toTimeString().substring(0,5); }
+      if(typeof h==="number"){ 
+        const total=Math.round(h*24*60);
+        const hh=String(Math.floor(total/60)).padStart(2,"0");
+        const mm=String(total%60).padStart(2,"0");
+        return `${hh}:${mm}`;
+      }
+      let str=String(h).trim();
+      if(/^\d{1,2}:\d{2}/.test(str)) return str.substring(0,5);
+      return "--:--";
+    }
+
+    const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
     function mostrarLoader(){document.getElementById('loader').style.display="flex";}
     function esconderLoader(){document.getElementById('loader').style.display="none";}
 
@@ -220,8 +233,10 @@
       mostrarLoader();
       const data=document.getElementById('f_data').value;
       const cantor=document.getElementById('f_cantor').value;
-      let hora=document.getElementById('f_hora').value;if(hora&&hora.length===5)hora=hora;
-      let valor=document.getElementById('f_valor').value.replace(',','.');valor=parseFloat(valor)||0;
+      let hora=document.getElementById('f_hora').value;
+      if(hora && hora.length===5) hora=hora; // sempre HH:mm
+      let valor=document.getElementById('f_valor').value.replace(',','.');
+      valor=parseFloat(valor)||0;
       const payload={empresa:EMPRESA,data,cantor,hora,valor};
       if(EDITANDO&&EDITANDO.row){payload.action="update";payload.row=EDITANDO.row;}else{payload.action="create";}
       await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});
@@ -232,6 +247,7 @@
       mostrarLoader();await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"delete",row:EDITANDO.row})});
       fecharForm();carregarAgenda();}
 
+    // Flatpickr
     let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"d/m/Y",locale:"pt",
       onClose:(d)=>{filtroDe=d[0]||null;filtroAte=d[1]||null;carregarAgenda();}});
     verificarLogin();
