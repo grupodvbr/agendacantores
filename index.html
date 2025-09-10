@@ -73,6 +73,7 @@
   </header>
   <div class="content"><main class="lista" id="lista"></main></div>
 
+  <!-- Login -->
   <div id="loginModal"><div id="loginBox">
     <h3>Login</h3>
     <input type="password" id="senha" placeholder="Digite a senha"/>
@@ -80,6 +81,7 @@
     <div id="loginMsg" style="color:#f44;margin-top:6px;"></div>
   </div></div>
 
+  <!-- Modal detalhes -->
   <div id="modal"><div class="modal-box">
     <h3>Detalhes <span id="editBtn">✏️</span></h3>
     <div class="kv"><span>Data</span><b id="m_data"></b></div>
@@ -89,6 +91,7 @@
     <button class="btn close" onclick="fecharModal()">Fechar</button>
   </div></div>
 
+  <!-- Modal form -->
   <div id="formModal"><div class="modal-box">
     <h3 id="formTitle">Novo</h3>
     <label>Data</label><input type="date" id="f_data"/>
@@ -106,6 +109,7 @@
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
   <script>
+    // Estrelas
     function criarEstrelas(qtd,container){
       for(let i=0;i<qtd;i++){
         let s=document.createElement('div');
@@ -121,13 +125,32 @@
     criarEstrelas(50,document.getElementById('stars'));
     criarEstrelas(20,document.getElementById('stars-front'));
 
-    const API_URL="https://script.google.com/macros/s/AKfycbx4CNJml0IbBAxdrgnODPP1JAOwYt0AzCeZYwbIS5sxOBDpNxiqR4xqnyWpds7fuETO/exec";
+    // Config
+    const API_URL="https://script.google.com/macros/s/AKfycbxzEvV7ogEtufzHmNNlLkEO4vteI6hQufNdEpYBFc1pFSuMtV65eDRuMs6l3e9FR5s/exec"; 
     const SENHAS={"0152":"Mercatto Delícia","1058":"Villa Gourmet","8486":"Delícia Gourmet"};
     let EMPRESA=null,EDITANDO=null,filtroDe=null,filtroAte=null;
 
-    const pad=n=>n.toString().padStart(2,'0');
-    const toDateKey=i=>{const d=new Date(i);return isNaN(d)?null:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
-    const formatHora=h=>h?String(h).substring(0,5):"--:--";
+    // Helpers
+    const pad=n=>String(n).padStart(2,'0');
+    function toDateKey(input){
+      if(input instanceof Date) return `${input.getFullYear()}-${pad(input.getMonth()+1)}-${pad(input.getDate())}`;
+      const s=String(input||'').trim();
+      let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m) return `${m[1]}-${m[2]}-${m[3]}`;
+      m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);if(m) return `${m[3]}-${m[2]}-${m[1]}`;
+      const d=new Date(s);if(!isNaN(d)) return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+      return '';
+    }
+    function labelBRfromKey(key){
+      const [y,m,d]=key.split('-').map(Number);
+      const dt=new Date(y,(m||1)-1,d||1,12,0,0);
+      return dt.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+    }
+    function formatHora(h){
+      if(!h) return '--:--';
+      if(h instanceof Date) return `${pad(h.getHours())}:${pad(h.getMinutes())}`;
+      const m=String(h).match(/(\d{1,2}):(\d{2})/);
+      return m?`${pad(m[1])}:${pad(m[2])}`:'--:--';
+    }
     const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
     function mostrarLoader(){document.getElementById('loader').style.display="flex";}
@@ -151,6 +174,7 @@
       mostrarLoader();
       const box=document.getElementById('lista');box.innerHTML="";
       let eventos=await (await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`)).json();
+      // Semana padrão
       if(!filtroDe&&!filtroAte){
         const hoje=new Date();const ds=hoje.getDay();
         const seg=new Date(hoje);seg.setDate(hoje.getDate()-((ds+6)%7));
@@ -170,7 +194,7 @@
         const passado=k<hojeKey?" passado":"";
         const itens=grupos[k].map(ev=>`
           <div class="linha${passado}" onclick="abrirModal('${k}',${ev.row},'${ev.cantor}','${ev.hora}','${ev.valor}')">
-            <div class="texto">${ev.cantor}</div><div class="hora">${ev.hora}</div>
+            <div class="texto">${ev.cantor}</div><div class="hora">${formatHora(ev.hora)}</div>
           </div>`).join("");
         box.innerHTML+=`<section class="grupo"><div class="dia">${dia}<small>${mes}</small></div><div class="itens">${itens}</div></section>`;
       }
@@ -178,9 +202,9 @@
     }
 
     function abrirModal(key,row,cantor,hora,valor){
-      document.getElementById('m_data').textContent=new Date(key).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+      document.getElementById('m_data').textContent=labelBRfromKey(key);
       document.getElementById('m_cantor').textContent=cantor;
-      document.getElementById('m_hora').textContent=hora;
+      document.getElementById('m_hora').textContent=formatHora(hora);
       document.getElementById('m_valor').textContent=formatValor(valor);
       EDITANDO={row,data:key,cantor,hora,valor};
       document.getElementById('modal').style.display="flex";
@@ -191,7 +215,7 @@
       document.getElementById('formTitle').textContent="Editar Registro";
       document.getElementById('f_data').value=EDITANDO.data;
       document.getElementById('f_cantor').value=EDITANDO.cantor;
-      document.getElementById('f_hora').value=EDITANDO.hora;
+      document.getElementById('f_hora').value=formatHora(EDITANDO.hora);
       document.getElementById('f_valor').value=EDITANDO.valor;
       document.getElementById('deleteBtn').style.display="block";
       fecharModal();document.getElementById('formModal').style.display="flex";
@@ -208,7 +232,8 @@
       mostrarLoader();
       const data=document.getElementById('f_data').value;
       const cantor=document.getElementById('f_cantor').value;
-      let hora=document.getElementById('f_hora').value;if(hora&&hora.length===5)hora=hora;
+      let hora=document.getElementById('f_hora').value;
+      if(hora&&hora.length===5)hora=hora;
       let valor=document.getElementById('f_valor').value.replace(',','.');valor=parseFloat(valor)||0;
       const payload={empresa:EMPRESA,data,cantor,hora,valor};
       if(EDITANDO&&EDITANDO.row){payload.action="update";payload.row=EDITANDO.row;}else{payload.action="create";}
