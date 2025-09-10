@@ -125,32 +125,14 @@
     criarEstrelas(50,document.getElementById('stars'));
     criarEstrelas(20,document.getElementById('stars-front'));
 
-    // Config
-    const API_URL="https://script.google.com/macros/s/AKfycbxzEvV7ogEtufzHmNNlLkEO4vteI6hQufNdEpYBFc1pFSuMtV65eDRuMs6l3e9FR5s/exec"; 
+    // CONFIG
+    const API_URL="https://script.google.com/macros/s/AKfycbwMZIFXbQUPQLxEkYSO1UbGQxO3Er38JheMbImInqiKJ3hJoaBNR05AeWA5CnP8YX9Q/exec"; // 👈 substitua pela URL do GAS implantado
     const SENHAS={"0152":"Mercatto Delícia","1058":"Villa Gourmet","8486":"Delícia Gourmet"};
     let EMPRESA=null,EDITANDO=null,filtroDe=null,filtroAte=null;
 
-    // Helpers
-    const pad=n=>String(n).padStart(2,'0');
-    function toDateKey(input){
-      if(input instanceof Date) return `${input.getFullYear()}-${pad(input.getMonth()+1)}-${pad(input.getDate())}`;
-      const s=String(input||'').trim();
-      let m=s.match(/^(\d{4})-(\d{2})-(\d{2})/);if(m) return `${m[1]}-${m[2]}-${m[3]}`;
-      m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);if(m) return `${m[3]}-${m[2]}-${m[1]}`;
-      const d=new Date(s);if(!isNaN(d)) return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
-      return '';
-    }
-    function labelBRfromKey(key){
-      const [y,m,d]=key.split('-').map(Number);
-      const dt=new Date(y,(m||1)-1,d||1,12,0,0);
-      return dt.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
-    }
-    function formatHora(h){
-      if(!h) return '--:--';
-      if(h instanceof Date) return `${pad(h.getHours())}:${pad(h.getMinutes())}`;
-      const m=String(h).match(/(\d{1,2}):(\d{2})/);
-      return m?`${pad(m[1])}:${pad(m[2])}`:'--:--';
-    }
+    const pad=n=>n.toString().padStart(2,'0');
+    const toDateKey=i=>{const d=new Date(i);return isNaN(d)?null:`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;}
+    const formatHora=h=>h?String(h).substring(0,5):"--:--";
     const formatValor=v=>Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
 
     function mostrarLoader(){document.getElementById('loader').style.display="flex";}
@@ -174,17 +156,7 @@
       mostrarLoader();
       const box=document.getElementById('lista');box.innerHTML="";
       let eventos=await (await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`)).json();
-      // Semana padrão
-      if(!filtroDe&&!filtroAte){
-        const hoje=new Date();const ds=hoje.getDay();
-        const seg=new Date(hoje);seg.setDate(hoje.getDate()-((ds+6)%7));
-        const dom=new Date(seg);dom.setDate(seg.getDate()+6);
-        filtroDe=seg;filtroAte=dom;calendar.setDate([seg,dom],true);
-      }
-      if(filtroDe&&filtroAte){
-        const from=toDateKey(filtroDe),to=toDateKey(filtroAte);
-        eventos=eventos.filter(ev=>{const k=toDateKey(ev.data);return k&&k>=from&&k<=to;});
-      }
+
       const grupos={};for(const ev of eventos){const k=toDateKey(ev.data);if(!k)continue;(grupos[k] ||= []).push(ev);}
       const dias=Object.keys(grupos).sort();if(!dias.length){box.innerHTML="<p>Sem eventos no período.</p>";esconderLoader();return;}
       const hojeKey=toDateKey(new Date());
@@ -202,11 +174,11 @@
     }
 
     function abrirModal(key,row,cantor,hora,valor){
-      document.getElementById('m_data').textContent=labelBRfromKey(key);
+      document.getElementById('m_data').textContent=new Date(key).toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
       document.getElementById('m_cantor').textContent=cantor;
       document.getElementById('m_hora').textContent=formatHora(hora);
       document.getElementById('m_valor').textContent=formatValor(valor);
-      EDITANDO={row,data:key,cantor,hora,valor};
+      EDITANDO={row,data:key,cantor,hora,valor}; // row salvo
       document.getElementById('modal').style.display="flex";
     }
     function fecharModal(){document.getElementById('modal').style.display="none";}
@@ -215,7 +187,7 @@
       document.getElementById('formTitle').textContent="Editar Registro";
       document.getElementById('f_data').value=EDITANDO.data;
       document.getElementById('f_cantor').value=EDITANDO.cantor;
-      document.getElementById('f_hora').value=formatHora(EDITANDO.hora);
+      document.getElementById('f_hora').value=EDITANDO.hora;
       document.getElementById('f_valor').value=EDITANDO.valor;
       document.getElementById('deleteBtn').style.display="block";
       fecharModal();document.getElementById('formModal').style.display="flex";
@@ -232,8 +204,7 @@
       mostrarLoader();
       const data=document.getElementById('f_data').value;
       const cantor=document.getElementById('f_cantor').value;
-      let hora=document.getElementById('f_hora').value;
-      if(hora&&hora.length===5)hora=hora;
+      let hora=document.getElementById('f_hora').value;if(hora&&hora.length===5)hora=hora;
       let valor=document.getElementById('f_valor').value.replace(',','.');valor=parseFloat(valor)||0;
       const payload={empresa:EMPRESA,data,cantor,hora,valor};
       if(EDITANDO&&EDITANDO.row){payload.action="update";payload.row=EDITANDO.row;}else{payload.action="create";}
@@ -244,7 +215,6 @@
       if(!confirm("Deseja realmente excluir este registro?"))return;
       mostrarLoader();await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"delete",row:EDITANDO.row})});
       fecharForm();carregarAgenda();}
-
     let calendar=flatpickr("#calendarBtn",{mode:"range",dateFormat:"d/m/Y",locale:"pt",
       onClose:(d)=>{filtroDe=d[0]||null;filtroAte=d[1]||null;carregarAgenda();}});
     verificarLogin();
