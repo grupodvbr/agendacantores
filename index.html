@@ -146,7 +146,12 @@
     criarEstrelas(20,document.getElementById('stars-front'));
 
     /* ---------------- Config ---------------- */
-    const API_URL="https://script.google.com/macros/s/AKfycbzCWTJPkUHvHdvQrvWOu-jbd_I2O7VAnL8cDRrWuXACy4xWifwfIYd48MWiksmNpORm/exec";
+const supabase = window.supabase.createClient(
+  "https://dxkszikemntfusfyrzos.supabase.co",
+  "sb_publishable_NNFvdfSXgOdGGVcSbphbjQ_brC3_9ed"
+);
+    
+    
     const SENHAS={"0152":"Mercatto Delícia","1058":"Villa Gourmet","8486":"Delícia Gourmet"};
     let EMPRESA=null,EDITANDO=null,filtroDe=null,filtroAte=null;
 
@@ -229,62 +234,68 @@
     });
 
     /* ---------------- CRUD / Render ---------------- */
-    async function carregarAgenda(){
-      mostrarLoader(true);
-      const box=document.getElementById('lista');
-      box.innerHTML="";
+async function carregarAgenda(){
+  mostrarLoader(true);
+  const box=document.getElementById('lista');
+  box.innerHTML="";
 
-      let eventos=[];
-      try{
-        const rsp = await fetch(`${API_URL}?empresa=${encodeURIComponent(EMPRESA)}`);
-        eventos = await rsp.json();
-      }catch(e){ console.error(e); box.innerHTML="<p>Erro ao carregar.</p>"; mostrarLoader(false); return; }
+  let { data:eventos, error } = await supabase
+    .from("agenda_musicos")
+    .select("*")
+    .eq("empresa", EMPRESA)
+    .order("data", { ascending: true });
 
-      // Filtra por período (comparando chaves yyyy-mm-dd)
-      if(filtroDe && filtroAte){
-        const from = safeDateKey(`${filtroDe.getFullYear()}-${pad(filtroDe.getMonth()+1)}-${pad(filtroDe.getDate())}`);
-        const to   = safeDateKey(`${filtroAte.getFullYear()}-${pad(filtroAte.getMonth()+1)}-${pad(filtroAte.getDate())}`);
-        eventos = eventos.filter(ev=>{
-          const k = safeDateKey(ev.data);
-          return k && k >= from && k <= to;
-        });
-      }
+  if(error){
+    console.error(error);
+    box.innerHTML="<p>Erro ao carregar.</p>";
+    mostrarLoader(false);
+    return;
+  }
 
-      // Agrupa por data
-      const grupos={};
-      for(const ev of eventos){
-        const key = safeDateKey(ev.data);
-        if(!key) continue;
-        (grupos[key] ||= []).push(ev);
-      }
+  if(!eventos || !eventos.length){
+    box.innerHTML="<p>Sem eventos cadastrados.</p>";
+    mostrarLoader(false);
+    return;
+  }
 
-      const dias = Object.keys(grupos).sort();
-      if(!dias.length){ box.innerHTML="<p>Sem eventos no período.</p>"; mostrarLoader(false); return; }
+  // FILTRO POR PERÍODO
+  if(filtroDe && filtroAte){
+    eventos = eventos.filter(ev=>{
+      const evDate = new Date(ev.data);
+      return evDate >= filtroDe && evDate <= filtroAte;
+    });
+  }
 
-      for(const k of dias){
-        const [y,m,d]=k.split('-').map(Number);
-        const dt = new Date(`${k}T00:00:00`); // fixa meia-noite local para não deslocar
-        const dia = pad(d);
-        const mes = dt.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
+  const grupos={};
+  for(const ev of eventos){
+    const key = ev.data;
+    (grupos[key] ||= []).push(ev);
+  }
 
-        const itens = grupos[k].map(ev=>{
-          const hora = safeTime(ev.hora);
-          return `
-            <div class="linha" onclick="abrirModal('${k}',${ev.row},'${ev.cantor}','${hora}','${ev.valor}')">
-              <div class="texto">${ev.cantor}</div>
-              <div class="hora">${hora}</div>
-            </div>`;
-        }).join("");
+  const dias = Object.keys(grupos).sort();
 
-        box.innerHTML += `
-          <section class="grupo">
-            <div class="dia">${dia}<small>${mes}</small></div>
-            <div class="itens">${itens}</div>
-          </section>`;
-      }
+  for(const k of dias){
 
-      mostrarLoader(false);
-    }
+    const dt = new Date(k);
+    const dia = pad(dt.getDate());
+    const mes = dt.toLocaleString('pt-BR',{month:'short'}).toUpperCase();
+
+    const itens = grupos[k].map(ev=>`
+      <div class="linha" onclick="abrirModal('${k}','${ev.id}','${ev.cantor}','${ev.hora}','${ev.valor}')">
+        <div class="texto">${ev.cantor}</div>
+        <div class="hora">${ev.hora}</div>
+      </div>
+    `).join("");
+
+    box.innerHTML += `
+      <section class="grupo">
+        <div class="dia">${dia}<small>${mes}</small></div>
+        <div class="itens">${itens}</div>
+      </section>`;
+  }
+
+  mostrarLoader(false);
+}
 
     function abrirModal(key,row,cantor,hora,valor){
       const dt = new Date(`${key}T00:00:00`);
@@ -324,33 +335,57 @@
 
     function fecharForm(){ document.getElementById('formModal').style.display="none"; }
 
-    async function salvarRegistro(){
-      mostrarLoader(true);
-      const data  = document.getElementById('f_data').value;       // yyyy-mm-dd
-      const cantor= document.getElementById('f_cantor').value.trim();
-      let   hora  = safeTime(document.getElementById('f_hora').value); // HH:mm
-      let   valor = String(document.getElementById('f_valor').value||'').replace(',','.');
-      valor = parseFloat(valor)||0;
+  async function salvarRegistro(){
 
-      const payload = {empresa:EMPRESA,data,cantor,hora,valor};
-      if(EDITANDO && EDITANDO.row){ payload.action="update"; payload.row=EDITANDO.row; }
-      else                        { payload.action="create"; }
+  mostrarLoader(true);
 
-      try{
-        await fetch(API_URL,{method:"POST",body:JSON.stringify(payload)});
-      }catch(e){ console.error(e); }
-      fecharForm(); await carregarAgenda();
-    }
+  const data  = document.getElementById('f_data').value;
+  const cantor= document.getElementById('f_cantor').value.trim();
+  const hora  = document.getElementById('f_hora').value;
+  let valor   = parseFloat(
+    String(document.getElementById('f_valor').value||'').replace(',','.')
+  ) || 0;
 
-    async function deleteRegistro(){
-      if(!EDITANDO || !EDITANDO.row) return;
-      if(!confirm("Deseja realmente excluir este registro?")) return;
-      mostrarLoader(true);
-      try{
-        await fetch(API_URL,{method:"POST",body:JSON.stringify({action:"delete",row:EDITANDO.row})});
-      }catch(e){ console.error(e); }
-      fecharForm(); await carregarAgenda();
-    }
+  if(EDITANDO && EDITANDO.id){
+
+    await supabase
+      .from("agenda_musicos")
+      .update({ data, cantor, hora, valor })
+      .eq("id", EDITANDO.id);
+
+  } else {
+
+    await supabase
+      .from("agenda_musicos")
+      .insert([{
+        empresa: EMPRESA,
+        data,
+        cantor,
+        hora,
+        valor
+      }]);
+
+  }
+
+  fecharForm();
+  await carregarAgenda();
+}
+
+async function deleteRegistro(){
+
+  if(!EDITANDO || !EDITANDO.id) return;
+  if(!confirm("Deseja excluir?")) return;
+
+  mostrarLoader(true);
+
+  await supabase
+    .from("agenda_musicos")
+    .delete()
+    .eq("id", EDITANDO.id);
+
+  fecharForm();
+  await carregarAgenda();
+}
 
     // Excluir botão (no form)
     window.deleteRegistro = deleteRegistro;
