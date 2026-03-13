@@ -240,8 +240,8 @@ async function carregarAgenda(){
   const box=document.getElementById('lista');
   box.innerHTML="";
 
-  let { data:eventos, error } = await supabase
-    .from("agenda_musicos")
+let { data:eventos, error } = await sb
+  .from("agenda_musicos")
     .select("*")
     .eq("empresa", EMPRESA)
     .order("data", { ascending: true });
@@ -361,15 +361,15 @@ function abrirModal(key,id,cantor,hora,valor){
 
   if(EDITANDO && EDITANDO.id){
 
-    await supabase
-      .from("agenda_musicos")
+await sb
+  .from("agenda_musicos")
       .update({ data, cantor, hora, valor })
       .eq("id", EDITANDO.id);
 
   } else {
 
-    await supabase
-      .from("agenda_musicos")
+await sb
+  .from("agenda_musicos")
       .insert([{
         empresa: EMPRESA,
         data,
@@ -391,8 +391,8 @@ async function deleteRegistro(){
 
   mostrarLoader(true);
 
-  await supabase
-    .from("agenda_musicos")
+await sb
+  .from("agenda_musicos")
     .delete()
     .eq("id", EDITANDO.id);
 
