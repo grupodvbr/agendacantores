@@ -128,6 +128,7 @@
 
   <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
   <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/pt.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script>
     /* ---------------- Estrelas ---------------- */
     function criarEstrelas(qtd,container){
@@ -297,15 +298,27 @@ async function carregarAgenda(){
   mostrarLoader(false);
 }
 
-    function abrirModal(key,row,cantor,hora,valor){
-      const dt = new Date(`${key}T00:00:00`);
-      document.getElementById('m_data').textContent = dt.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
-      document.getElementById('m_cantor').textContent = cantor;
-      document.getElementById('m_hora').textContent = safeTime(hora);
-      document.getElementById('m_valor').textContent = brMoney(valor);
-      EDITANDO = {row,data:key,cantor,hora:safeTime(hora),valor};
-      document.getElementById('modal').style.display="flex";
-    }
+function abrirModal(key,id,cantor,hora,valor){
+
+  const dt = new Date(`${key}T00:00:00`);
+
+  document.getElementById('m_data').textContent =
+    dt.toLocaleDateString('pt-BR',{weekday:'short',day:'2-digit',month:'short'});
+
+  document.getElementById('m_cantor').textContent = cantor;
+  document.getElementById('m_hora').textContent = safeTime(hora);
+  document.getElementById('m_valor').textContent = brMoney(valor);
+
+  EDITANDO = {
+    id: id,
+    data: key,
+    cantor,
+    hora: safeTime(hora),
+    valor
+  };
+
+  document.getElementById('modal').style.display="flex";
+}
     function fecharModal(){ document.getElementById('modal').style.display="none"; }
 
     // Abrir formulário para editar
