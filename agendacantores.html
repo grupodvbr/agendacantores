@@ -117,7 +117,15 @@
     <label>Data</label><input type="date" id="f_data"/>
     <label>Cantor</label><input type="text" id="f_cantor"/>
     <label>Horário</label><input type="time" id="f_hora"/>
-    <label>Valor do Couvert</label><input type="text" id="f_valor" inputmode="decimal" placeholder="0,00"/>
+<label>Valor do Couvert</label>
+<input 
+  type="text"
+  id="f_valor"
+  inputmode="numeric"
+  pattern="[0-9]*"
+  placeholder="0,00"
+/>
+    
     <button class="btn" onclick="salvarRegistro()">Salvar</button>
     <button id="deleteBtn" class="btn delete" style="display:none" onclick="deleteRegistro()">Excluir</button>
     <button class="btn" style="background:#ccc" onclick="fecharForm()">Cancelar</button>
@@ -186,7 +194,28 @@ const sb = window.supabase.createClient(
     function brMoney(v){ return Number(v||0).toLocaleString('pt-BR',{style:'currency',currency:'BRL'}); }
 
     function mostrarLoader(v=true){document.getElementById('loader').style.display=v?"flex":"none";}
+/* ================= MASCARA REAL ================= */
 
+const campoValor = document.getElementById("f_valor");
+
+campoValor.addEventListener("input", function(e){
+
+  let v = e.target.value.replace(/\D/g,"");
+
+  if(v === "") {
+    e.target.value = "";
+    return;
+  }
+
+  v = (parseInt(v,10) / 100).toFixed(2);
+
+  v = v.replace(".",",");
+
+  v = v.replace(/\B(?=(\d{3})+(?!\d))/g,".");
+
+  e.target.value = v;
+
+});
     /* ---------------- Login ---------------- */
     function verificarLogin(){
       const e=localStorage.getItem("empresa");
@@ -355,9 +384,12 @@ function abrirModal(key,id,cantor,hora,valor){
   const data  = document.getElementById('f_data').value;
   const cantor= document.getElementById('f_cantor').value.trim();
   const hora  = document.getElementById('f_hora').value;
-  let valor   = parseFloat(
-    String(document.getElementById('f_valor').value||'').replace(',','.')
-  ) || 0;
+let valor = parseFloat(
+  document.getElementById('f_valor')
+  .value
+  .replace(/\./g,'')
+  .replace(',','.')
+) || 0;
 
   if(EDITANDO && EDITANDO.id){
 
